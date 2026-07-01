@@ -59,3 +59,17 @@ def client() -> Generator[TestClient, None, None]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+@pytest.fixture(autouse=True)
+def fake_ingestion_enqueue(monkeypatch) -> None:
+    from app.api.routes import ingestions as ingestion_routes
+
+    class FakeAsyncResult:
+        id = "test-task-id"
+
+    monkeypatch.setattr(
+        ingestion_routes.process_ingestion_job,
+        "delay",
+        lambda *args, **kwargs: FakeAsyncResult(),
+    )
+

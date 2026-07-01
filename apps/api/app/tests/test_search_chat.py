@@ -1,5 +1,8 @@
 from uuid import UUID
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.services.ingestion_processor import IngestionProcessor
 
 
 def register_and_login(client: TestClient, email: str) -> str:
@@ -17,14 +20,16 @@ def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def ingest_document(client: TestClient, token: str, text: str, category: str = "learning") -> dict:
+def ingest_document(client: TestClient, token: str, db_session: Session, text: str, category: str = "learning") -> dict:
     ingestion = client.post(
         "/api/ingestions",
         headers=auth_header(token),
         json={"input_type": "text", "input_value": text},
     )
-    assert ingestion.status_code == 200, ingestion.text
-    content_id = ingestion.json()["content"]["id"]
+    assert ingestion.status_code == 202, ingestion.text
+    queued = ingestion.json()
+    processed = IngestionProcessor(db_session).process_existing_job(queued["job"]["user_id"], queued["job"]["id"])
+    content_id = str(processed.content.id)
     document = client.post(
         "/api/documents/from-content",
         headers=auth_header(token),
@@ -34,11 +39,11 @@ def ingest_document(client: TestClient, token: str, text: str, category: str = "
     return document.json()
 
 
-def test_semantic_search_returns_current_user_chunks_only(client: TestClient) -> None:
+def test_semantic_search_returns_current_user_chunks_only(client: TestClient, db_session: Session) -> None:
     alice = register_and_login(client, "alice-search@example.com")
     bob = register_and_login(client, "bob-search@example.com")
-    ingest_document(client, alice, "python vector database fastapi knowledge retrieval " * 20)
-    ingest_document(client, bob, "travel island hotel food beach " * 20)
+    ingest_document(client, alice, db_session, "python vector database fastapi knowledge retrieval " * 20)
+    ingest_document(client, bob, db_session, "travel island hotel food beach " * 20)
 
     response = client.post(
         "/api/search",
@@ -52,9 +57,9 @@ def test_semantic_search_returns_current_user_chunks_only(client: TestClient) ->
     assert all("travel island" not in result["content"] for result in results)
 
 
-def test_chat_returns_answer_with_citations(client: TestClient) -> None:
+def test_chat_returns_answer_with_citations(client: TestClient, db_session: Session) -> None:
     token = register_and_login(client, "chat@example.com")
-    document = ingest_document(client, token, "personal radar answer citation context " * 20)
+    document = ingest_document(client, token, db_session, "personal radar answer citation context " * 20)
 
     response = client.post(
         "/api/chat",
@@ -93,7 +98,7 @@ def test_search_requires_authentication(client: TestClient) -> None:
     assert response.status_code == 401
 
 
-def test_sqlite_search_similar_returns_none_for_python_fallback(client: TestClient) -> None:
+def test_sqlite_search_similar_returns_none_for_python_fallback(client: TestClient, db_session: Session) -> None:
     from app.db.session import get_db
     from app.repositories.documents import DocumentChunkRepository
 

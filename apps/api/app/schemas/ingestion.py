@@ -25,6 +25,11 @@ class IngestionJobResponse(IngestionJobCreate):
     model_config = {"from_attributes": True}
 
 
+class IngestionQueueResponse(BaseModel):
+    job: IngestionJobResponse
+    task_id: str | None = None
+
+
 class IngestionSubmitResponse(BaseModel):
     job: IngestionJobResponse
     content: ContentResponse | None = None

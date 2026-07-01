@@ -30,10 +30,12 @@ class IngestionProcessor:
         job = self.ingestions.create_job(user_id, payload)
         return self.process_existing_job(user_id, job.id)
 
-    def process_existing_job(self, user_id: UUID, job_id: UUID) -> IngestionSubmitResponse:
-        job = self.ingestions.get_job(user_id, job_id)
+    def process_existing_job(self, user_id: UUID | str, job_id: UUID | str) -> IngestionSubmitResponse:
+        user_uuid = UUID(str(user_id))
+        job_uuid = UUID(str(job_id))
+        job = self.ingestions.get_job(user_uuid, job_uuid)
         payload = IngestionJobCreate(input_type=job.input_type, input_value=job.input_value)
-        return self._process_job(user_id, job, payload)
+        return self._process_job(user_uuid, job, payload)
 
     def _process_job(
         self,

@@ -79,20 +79,21 @@ def test_embed_document_chunks_task_updates_embeddings(monkeypatch, client, db_s
 
     token = register_and_login("task-embed@example.com")
     headers = {"Authorization": f"Bearer {token}"}
+    monkeypatch.setattr(jobs, "SessionLocal", lambda: db_session)
     content_response = client.post(
         "/api/ingestions",
         headers=headers,
         json={"input_type": "text", "input_value": "embedding task content " * 20},
     )
-    content_id = content_response.json()["content"]["id"]
+    queued = content_response.json()
+    processed = jobs.process_ingestion_job(queued["job"]["user_id"], queued["job"]["id"])
+    content_id = processed["content"]["id"]
     document_response = client.post(
         "/api/documents/from-content",
         headers=headers,
         json={"content_id": content_id, "category": "other"},
     )
     document = document_response.json()
-    monkeypatch.setattr(jobs, "SessionLocal", lambda: db_session)
-
     result = jobs.embed_document_chunks(document["user_id"], document["id"])
 
     assert result["updated"] >= 1

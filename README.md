@@ -95,9 +95,11 @@ docker compose exec api alembic upgrade head
 
 内容提交：
 
-- `POST /api/ingestions`
-- `GET /api/ingestions`
-- `GET /api/ingestions/{id}`
+内容提交采用异步任务：前端提交后先看到 pending job，后台 worker 负责抓取、解析、路由、摘要和状态更新。
+
+- `POST /api/ingestions`：提交 URL 或文本，返回 `202 Accepted`、pending job 和 Celery `task_id`。
+- `GET /api/ingestions`：查看当前用户的采集任务列表。
+- `GET /api/ingestions/{id}`：轮询单个采集任务状态。
 
 知识库文档：
 

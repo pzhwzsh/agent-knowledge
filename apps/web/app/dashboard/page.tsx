@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest, DocumentItem, IngestionJob, isLikelyUrl, Recommendation } from "../../lib/api";
+import { apiRequest, DocumentItem, IngestionJob, IngestionQueueResponse, isLikelyUrl, Recommendation } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
 import { AppShell, EmptyState, PageCard } from "../../components/AppShell";
 
@@ -43,9 +43,9 @@ export default function DashboardPage() {
     if (!auth.token || !newContent.trim()) return;
     setMessage("正在提交给 Agent...");
     try {
-      await apiRequest("/api/ingestions", { method: "POST", body: JSON.stringify({ input_type: isLikelyUrl(newContent) ? "url" : "text", input_value: newContent.trim() }) }, auth.token);
+      const queued = await apiRequest<IngestionQueueResponse>("/api/ingestions", { method: "POST", body: JSON.stringify({ input_type: isLikelyUrl(newContent) ? "url" : "text", input_value: newContent.trim() }) }, auth.token);
       setNewContent("");
-      setMessage("提交成功，已刷新仪表盘。");
+      setMessage(queued.job.status === "failed" ? `提交失败：${queued.job.error_message ?? "任务未能入队"}` : `已创建采集任务 ${queued.job.id.slice(0, 8)}，后台处理中。`);
       await refresh();
     } catch (error) { setMessage(error instanceof Error ? error.message : "提交失败"); }
   }

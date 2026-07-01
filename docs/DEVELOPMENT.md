@@ -124,12 +124,13 @@
 
 已实现行为：
 
-- 提交纯文本。
-- 提交 URL。
-- URL 抓取前进行 SSRF 防护。
+- 提交纯文本后创建 pending job，并投递 `process_ingestion_job` Celery 任务。
+- 提交 URL 后创建 pending job，并投递 `process_ingestion_job` Celery 任务。
+- `POST /api/ingestions` 返回 `202 Accepted`、job 和 Celery `task_id`；前端通过 `GET /api/ingestions/{id}` 或列表接口轮询状态。
+- worker 处理时进行 URL SSRF 防护、抓取、解析、路由、摘要和 job 状态更新。
 - 使用 `httpx`、`trafilatura`、`BeautifulSoup` 提取网页正文。
 - 按 hash 或 canonical URL 去重。
-- 记录 ingestion job 状态。
+- 记录 ingestion job 的 pending/running/success/failed 状态。
 - RouterAgent 路由。
 - mock summary Agent 输出。
 - 记录 agent run。
@@ -198,7 +199,7 @@
 
 已实现 Celery 任务入口：
 
-- `process_ingestion_job`：处理已有 ingestion job。
+- `process_ingestion_job`：处理已有 ingestion job；公开提交接口已投递这个任务，不再在请求内同步跑完整采集。
 - `fetch_daily_sources`：抓取 GitHub Trending 并生成当前用户推荐。
 - `generate_user_recommendations`：基于输入内容创建并处理 ingestion。
 - `embed_document_chunks`：为已有文档 chunks 重新生成 embedding。
@@ -232,6 +233,17 @@
 - `in_app` 渠道会写入站内推送日志。
 - `email` 和 `dingtalk` 渠道支持真实发送，但需要配置 SMTP 或 webhook；配置缺失时会记录 skipped。
 
+### 第十阶段：Ingestion 主链路异步化
+
+本阶段已完成：
+
+- `POST /api/ingestions` 从同步处理改为只创建 pending job 并投递 Celery。
+- 返回结构新增 `task_id`，HTTP 状态码改为 `202 Accepted`。
+- `GET /api/ingestions` 和 `GET /api/ingestions/{id}` 作为轮询入口。
+- `IngestionProcessor.process_existing_job()` 保留为 worker 和内部测试使用，并支持字符串 UUID 边界输入。
+- 前端 dashboard 快速采集已改为显示后台处理中状态，不再假设提交后立即生成 content。
+- 后端测试已覆盖队列提交、worker 处理、用户隔离、文档/推荐/搜索下游链路。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -263,7 +275,43 @@
 - discovery。
 - tasks。
 
-最近通过结果：`pytest` 48 passed，`ruff check app` passed，前端 `npm run build` passed。
+最近通过结果：异步采集影响范围测试 `pytest app/tests/test_ingestions.py app/tests/test_documents_api.py app/tests/test_recommendations.py app/tests/test_search_chat.py app/tests/test_tasks.py` 为 25 passed；`ruff check app` passed。此前全量后端测试为 48 passed，前端 `npm run build` passed。
+
+## 外部分析核对与修补计划
+
+用户提供的外部分析整体方向是对的：项目已经超过空项目阶段，但仍混合了真实能力、mock 能力、占位能力和生产化待办。后续开发必须收紧口径，不再把 mock 或半接入能力写成完整生产能力。
+
+### 分析中准确的问题
+
+以下问题仍然成立，需要优先修补：
+
+- Mock 边界不够清楚：`GeneralAgent` 仍是规则/截断式摘要，`RecommenderAgent` 仍是规则评分，不是真正模型推荐。
+- Chat 仍不是真正 LLM RAG：当前 chat 是检索片段拼接模板，尚未调用 `ChatModel` 生成答案。
+- 测试环境与真实环境仍有差异：当前测试主要是 SQLite + mock LLM + `Base.metadata.create_all()`，不能证明 Docker Compose、PostgreSQL、pgvector、Celery worker、真实 LLM provider 全链路可用。
+- 安全收口还不完整：task health/schedule 当前未加认证；URL 抓取需要确认重定向后的地址也经过 SSRF 校验；前端 token 存 localStorage，登出只是本地删除 token。
+- 前端工程质量还需补强：API client 缺 timeout、AbortController、统一 401、全局 toast/loading/error boundary，React Query 依赖存在但未实际使用。
+- 生产部署仍偏开发态：前端依赖使用 `latest`，Docker Compose 中 web 使用 dev server，不是生产构建运行方式。
+- ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
+- AuditLog 仍是模型占位，尚未形成完整审计写入链路。
+
+### 分析中已经过期或已修补的点
+
+以下说法在当前代码中已经部分或全部过期：
+
+- 搜索问答中文乱码：`SearchService.chat()` 已修复为正常中文。
+- pgvector 数据库侧排序：已新增 PostgreSQL pgvector cosine distance 排序，SQLite 测试环境自动回退到 Python 余弦相似度。
+- 推送完全没完成：已实现站内推送日志、邮件/钉钉发送服务、`POST /api/push/daily`、`GET /api/push/logs`、每日推荐推送 Celery 任务；但生产模板、退订、频控和投递告警仍未完成。
+- 前端只有演示台：已拆为 `/dashboard`、`/documents`、`/recommendations`、`/search`、`/preferences` 多页面工作台；但交互状态和工程质量仍需要打磨。
+
+### 修补优先级
+
+1. 文档口径修正：所有文档必须明确区分“真实能力 / mock 能力 / 占位能力 / 生产待办”。
+2. 真实 RAG：让 `SearchService.chat()` 调用 `ChatModel`，用检索片段构造 prompt，保留 citations。
+3. 真实总结和推荐：将规则 summary/recommender 标注为 mock 或替换为 LLM provider 实现。
+4. 集成验证：新增 Docker Compose/PostgreSQL/pgvector/Alembic/Celery 的最小集成验证脚本。
+5. 安全收口：task 监控接口加认证或管理员保护；URL 重定向后再次校验；梳理 token 存储和登出策略。
+6. 前端工程化：模块化 API client，补 timeout、统一 401、toast/loading/error boundary，并实际使用 React Query。
+7. 生产可复现：锁定前端依赖版本，增加生产 web 启动方式。
 
 ## 开发规则
 

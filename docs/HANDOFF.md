@@ -110,9 +110,9 @@ PowerShell 激活虚拟环境：
 
 内容提交：
 
-- `POST /api/ingestions`
-- `GET /api/ingestions`
-- `GET /api/ingestions/{id}`
+- `POST /api/ingestions`：创建 pending job，并投递 Celery `process_ingestion_job`。
+- `GET /api/ingestions`：查看当前用户任务列表。
+- `GET /api/ingestions/{id}`：轮询任务状态。
 
 文档：
 
@@ -158,7 +158,7 @@ PowerShell 激活虚拟环境：
 
 当前已注册核心任务入口和定时调度：
 
-- `process_ingestion_job`：处理已有 ingestion job。
+- `process_ingestion_job`：处理已有 ingestion job；公开提交接口已投递这个任务。
 - `fetch_daily_sources`：抓取 GitHub Trending 并生成当前用户推荐。
 - `generate_user_recommendations`：基于输入内容创建并处理 ingestion。
 - `embed_document_chunks`：为已有文档 chunks 重新生成 embedding。
@@ -171,13 +171,15 @@ PowerShell 激活虚拟环境：
 ### 手动提交内容
 
 1. 用户调用 `POST /api/ingestions` 提交 URL 或文本。
-2. 系统创建 ingestion job。
-3. 文本直接使用；URL 先校验安全性再抓取。
-4. 创建或复用全局 content。
-5. RouterAgent 选择路由和分类。
-6. mock Agent 生成摘要。
-7. 记录 agent run。
-8. 更新 job 状态。
+2. 系统创建 pending ingestion job，并投递 Celery `process_ingestion_job`。
+3. API 返回 `202 Accepted`、job 和 `task_id`，前端通过列表或详情接口轮询状态。
+4. worker 将 job 标记 running。
+5. 文本直接使用；URL 先校验安全性再抓取。
+6. 创建或复用全局 content。
+7. RouterAgent 选择路由和分类。
+8. mock Agent 生成摘要。
+9. 记录 agent run。
+10. 更新 job 为 success 或 failed。
 
 ### 保存为知识库文档
 
@@ -249,24 +251,67 @@ pytest
 ruff check app
 ```
 
-最近结果：`pytest` 48 passed，`ruff check app` passed，前端 `npm run build` passed。
+最近结果：异步采集影响范围测试 25 passed，`ruff check app` passed；此前全量后端测试 48 passed，前端 `npm run build` passed。
 
 ## 已知风险
 
-- 搜索排序目前是 Python 侧实现，不是 PostgreSQL/pgvector 数据库侧排序。
-- Celery 核心任务入口、Beat 定时调度和基础重试策略已完成，但生产级告警和人工重放还没完成。
-- worker 容器存在，但任务覆盖不完整。
+- PostgreSQL 已使用 pgvector 数据库侧排序，但仍缺少真实数据量下的召回评估、参数调优和 rerank。
+- Celery 核心任务入口、公开 ingestion 异步投递、Beat 定时调度和基础重试策略已完成，但生产级告警和人工重放还没完成。
 - GitHub Trending 解析依赖 GitHub HTML 结构，页面变化可能导致失效。
 - RSS parser 是基础实现，不能覆盖所有 feed 边界情况。
-- 前端只是占位。
+- 前端已有多页面工作台，但加载、错误、401、全局状态和自动化测试仍偏弱。
 - 真实 LLM provider 接口已实现，但测试主要覆盖 mock 和 provider 解析逻辑。
+
+## 当前风险修补队列
+
+根据用户提供的外部分析，以下是当前最重要的风险和修补路线。接手者应优先处理这些问题，而不是继续横向增加新模块。
+
+### 需要承认的现状
+
+- 当前项目已经具备多用户、知识库、推荐、搜索、推送、前端工作台等骨架和部分真实能力。
+- 但仍不是完整生产产品，代码中同时存在真实能力、mock 能力、占位模型和生产待办。
+- 文档描述必须避免过度乐观，尤其是 summary、recommendation、chat、真实部署验证这些部分；Celery ingestion 异步化已完成，但生产告警和人工重放还没完成。
+
+### 已确认仍需修补
+
+- `GeneralAgent` 是规则/截断式摘要，不是真 LLM 总结。
+- `RecommenderAgent` 是规则评分，不是真模型推荐或学习型推荐。
+- `SearchService.chat()` 目前是检索片段模板拼接，不是真正 LLM RAG。
+- SQLite + mock LLM 单元测试不能替代 PostgreSQL/pgvector/Celery/真实 provider 集成验证。
+- `/api/tasks/health` 和 `/api/tasks/schedule` 当前未加认证或管理员保护。
+- URL 抓取要确认重定向后的最终 URL 也经过 SSRF 校验。
+- 前端 token 存 localStorage，logout 只是本地清除 token。
+- 前端 API client 仍缺 timeout、AbortController、统一 401、toast/loading/error boundary。
+- 前端依赖使用 `latest`，Docker Compose web 仍是 dev server，生产可复现性不足。
+- ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
+
+### 本轮已推进
+
+- `/api/ingestions` 主接口已从同步处理改为创建 pending job 并投递 Celery，返回 `202 Accepted` 和 `task_id`。
+- 前端快速采集已改为异步提交提示，提交后刷新任务列表，不再假设立即拿到 content。
+- 已更新受影响后端测试，覆盖异步提交、worker 处理和下游文档/推荐/搜索链路。
+
+### 已修补或部分过期
+
+- 搜索中文乱码已修复。
+- pgvector 数据库侧排序已实现，并保留 SQLite 回退。
+- 推送基础能力已实现，但生产模板、退订、频控、投递告警仍未完成。
+- 前端已不是单一占位页，已有多页面工作台，但工程体验还需打磨。
+
+### 建议下一步顺序
+
+1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
+2. 接入真实 LLM RAG：chat 调用 `ChatModel`，summary 调用模型生成。
+3. 增加 Docker Compose 集成验证：Alembic upgrade、Postgres pgvector 查询、Celery worker/beat 投递、API smoke test。
+4. 安全加固：task 接口认证、SSRF 重定向复查、token/登出策略。
+5. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
 
 ## 建议下一步
 
 1. 完成更完整的任务监控告警、失败任务人工重放和生产运维面板。
 2. 增强推送模板、退订、频控、投递告警和带签名的操作链接。
-3. 实现前端页面：login、register、dashboard、ingest、recommendations、documents、search、settings。
-4. 将搜索排序迁移到 PostgreSQL/pgvector。
+3. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
+4. 做 pgvector 召回评估、参数调优和 rerank。
 5. 增加 Docker Compose 端到端验证。
 
 ## 文档维护规则

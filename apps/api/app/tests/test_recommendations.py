@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.document import Document
+from app.services.ingestion_processor import IngestionProcessor
 
 
 def register_and_login(client: TestClient, email: str) -> str:
@@ -20,14 +21,16 @@ def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def create_content(client: TestClient, token: str, text: str = "python fastapi agent knowledge") -> str:
+def create_content(client: TestClient, token: str, db_session: Session, text: str = "python fastapi agent knowledge") -> str:
     response = client.post(
         "/api/ingestions",
         headers=auth_header(token),
         json={"input_type": "text", "input_value": text},
     )
-    assert response.status_code == 200, response.text
-    return response.json()["content"]["id"]
+    assert response.status_code == 202, response.text
+    queued = response.json()
+    processed = IngestionProcessor(db_session).process_existing_job(queued["job"]["user_id"], queued["job"]["id"])
+    return str(processed.content.id)
 
 
 def test_generate_recommendation_does_not_create_document(
@@ -40,7 +43,7 @@ def test_generate_recommendation_does_not_create_document(
         headers=auth_header(token),
         json={"interests": ["fastapi"], "enabled_categories": ["other"]},
     )
-    content_id = create_content(client, token)
+    content_id = create_content(client, token, db_session)
 
     response = client.post(
         "/api/recommendations/generate",
@@ -56,9 +59,9 @@ def test_generate_recommendation_does_not_create_document(
     assert list(db_session.scalars(select(Document))) == []
 
 
-def test_recommendation_status_transitions(client: TestClient) -> None:
+def test_recommendation_status_transitions(client: TestClient, db_session: Session) -> None:
     token = register_and_login(client, "rec-status@example.com")
-    content_id = create_content(client, token)
+    content_id = create_content(client, token, db_session)
     recommendation = client.post(
         "/api/recommendations/generate",
         headers=auth_header(token),
@@ -82,7 +85,7 @@ def test_recommendation_status_transitions(client: TestClient) -> None:
 
 def test_save_recommendation_creates_document_idempotently(client: TestClient, db_session: Session) -> None:
     token = register_and_login(client, "rec-save@example.com")
-    content_id = create_content(client, token, "save this fastapi article " * 20)
+    content_id = create_content(client, token, db_session, "save this fastapi article " * 20)
     recommendation = client.post(
         "/api/recommendations/generate",
         headers=auth_header(token),
@@ -99,11 +102,11 @@ def test_save_recommendation_creates_document_idempotently(client: TestClient, d
     assert len(list(db_session.scalars(select(Document)))) == 1
 
 
-def test_recommendations_are_isolated_by_current_user(client: TestClient) -> None:
+def test_recommendations_are_isolated_by_current_user(client: TestClient, db_session: Session) -> None:
     alice = register_and_login(client, "alice-rec@example.com")
     bob = register_and_login(client, "bob-rec@example.com")
-    alice_content = create_content(client, alice, "alice recommendation content")
-    bob_content = create_content(client, bob, "bob recommendation content")
+    alice_content = create_content(client, alice, db_session, "alice recommendation content")
+    bob_content = create_content(client, bob, db_session, "bob recommendation content")
     alice_rec = client.post(
         "/api/recommendations/generate",
         headers=auth_header(alice),

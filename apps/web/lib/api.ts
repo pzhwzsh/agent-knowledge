@@ -64,11 +64,9 @@ export type IngestionJob = {
   finished_at: string | null;
 };
 
-export type IngestionSubmitResponse = {
+export type IngestionQueueResponse = {
   job: IngestionJob;
-  content: { id: string; title: string | null; source_type: string; raw_text: string | null } | null;
-  route: Record<string, unknown> | null;
-  summary: Record<string, unknown> | null;
+  task_id: string | null;
 };
 
 export type SearchResult = {

@@ -3,6 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.document import Document, DocumentChunk
+from app.services.ingestion_processor import IngestionProcessor
 
 
 def register_and_login(client: TestClient, email: str) -> str:
@@ -20,14 +21,16 @@ def auth_header(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def create_content(client: TestClient, token: str, text: str = "????? " * 200) -> str:
+def create_content(client: TestClient, token: str, db_session: Session, text: str = "knowledge base content " * 200) -> str:
     response = client.post(
         "/api/ingestions",
         headers=auth_header(token),
         json={"input_type": "text", "input_value": text},
     )
-    assert response.status_code == 200, response.text
-    return response.json()["content"]["id"]
+    assert response.status_code == 202, response.text
+    queued = response.json()
+    processed = IngestionProcessor(db_session).process_existing_job(queued["job"]["user_id"], queued["job"]["id"])
+    return str(processed.content.id)
 
 
 def test_create_document_from_content_builds_chunks_and_embeddings(
@@ -35,7 +38,7 @@ def test_create_document_from_content_builds_chunks_and_embeddings(
     db_session: Session,
 ) -> None:
     token = register_and_login(client, "doc-create@example.com")
-    content_id = create_content(client, token)
+    content_id = create_content(client, token, db_session)
 
     response = client.post(
         "/api/documents/from-content",
@@ -55,7 +58,7 @@ def test_create_document_from_content_builds_chunks_and_embeddings(
 
 def test_repeated_create_from_same_content_is_idempotent(client: TestClient, db_session: Session) -> None:
     token = register_and_login(client, "doc-idempotent@example.com")
-    content_id = create_content(client, token)
+    content_id = create_content(client, token, db_session)
     payload = {"content_id": content_id, "category": "other"}
 
     first = client.post("/api/documents/from-content", headers=auth_header(token), json=payload)
@@ -69,11 +72,11 @@ def test_repeated_create_from_same_content_is_idempotent(client: TestClient, db_
     assert chunk_count == len(first.json()["chunks"])
 
 
-def test_documents_are_isolated_by_current_user(client: TestClient) -> None:
+def test_documents_are_isolated_by_current_user(client: TestClient, db_session: Session) -> None:
     alice = register_and_login(client, "alice-doc-api@example.com")
     bob = register_and_login(client, "bob-doc-api@example.com")
-    alice_content = create_content(client, alice, "alice private content")
-    bob_content = create_content(client, bob, "bob private content")
+    alice_content = create_content(client, alice, db_session, "alice private content")
+    bob_content = create_content(client, bob, db_session, "bob private content")
 
     alice_doc = client.post(
         "/api/documents/from-content",
@@ -95,9 +98,9 @@ def test_documents_are_isolated_by_current_user(client: TestClient) -> None:
     assert alice_doc["id"] != bob_doc["id"]
 
 
-def test_delete_document_removes_only_current_user_document(client: TestClient) -> None:
+def test_delete_document_removes_only_current_user_document(client: TestClient, db_session: Session) -> None:
     token = register_and_login(client, "doc-delete@example.com")
-    content_id = create_content(client, token, "delete me content")
+    content_id = create_content(client, token, db_session, "delete me content")
     created = client.post(
         "/api/documents/from-content",
         headers=auth_header(token),
