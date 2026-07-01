@@ -30,6 +30,14 @@ celery_app.conf.update(
             ),
             "kwargs": {"github_limit": 10, "limit": 100},
         },
+        "push-daily-recommendations-for-active-users": {
+            "task": "push_daily_recommendations_for_active_users",
+            "schedule": crontab(
+                hour=settings.celery_daily_sources_hour,
+                minute=(settings.celery_daily_sources_minute + 10) % 60,
+            ),
+            "kwargs": {"limit": 100},
+        },
     },
 )
 

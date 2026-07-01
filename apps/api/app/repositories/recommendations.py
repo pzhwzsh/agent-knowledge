@@ -60,3 +60,12 @@ class RecommendationRepository:
         self.db.add(recommendation)
         self.db.flush()
         return recommendation
+
+    def list_pending_for_push(self, user_id: UUID, *, limit: int = 10) -> list[Recommendation]:
+        statement = (
+            select(Recommendation)
+            .where(Recommendation.user_id == user_id, Recommendation.status == "pending")
+            .order_by(Recommendation.score.desc(), Recommendation.created_at.desc())
+            .limit(limit)
+        )
+        return list(self.db.scalars(statement))

@@ -12,6 +12,7 @@ from app.schemas.ingestion import IngestionJobCreate
 from app.services.discovery import DiscoveryService
 from app.services.ingestion_processor import IngestionProcessor
 from app.services.ingestions import IngestionService
+from app.services.push import RecommendationPushService
 from app.tasks.celery_app import celery_app
 
 settings = get_settings()
@@ -97,3 +98,23 @@ def cleanup_failed_jobs(*, older_than_minutes: int = 60, limit: int = 100) -> di
                 error_message="Marked failed by cleanup_failed_jobs after timeout.",
             )
         return {"marked_failed": len(stale_jobs)}
+
+
+@celery_app.task(name="push_daily_recommendations", **TASK_RETRY_KWARGS)
+def push_daily_recommendations(user_id: str) -> dict[str, object]:
+    with SessionLocal() as db:
+        user = UserRepository(db).get_active(UUID(user_id))
+        if user is None:
+            return {"skipped": True, "reason": "user_not_found_or_inactive"}
+        return RecommendationPushService(db).push_daily_recommendations(user.id)
+
+
+@celery_app.task(name="push_daily_recommendations_for_active_users")
+def push_daily_recommendations_for_active_users(*, limit: int = 100) -> dict[str, object]:
+    with SessionLocal() as db:
+        users = UserRepository(db).list_active(limit=limit)
+        queued = []
+        for user in users:
+            async_result = push_daily_recommendations.delay(str(user.id))
+            queued.append({"user_id": str(user.id), "task_id": async_result.id})
+        return {"queued": len(queued), "tasks": queued}

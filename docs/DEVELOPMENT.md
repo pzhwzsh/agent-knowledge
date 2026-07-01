@@ -32,8 +32,8 @@
 二期建议在一期后端稳定后推进：
 
 - 更完整的任务监控告警、失败任务人工重放和生产运维面板。
-- 邮件每日推荐推送。
-- 钉钉推送。
+- 更完整的推送模板、退订、频控和投递告警。
+- 钉钉/邮件真实发送配置和生产投递监控。
 - 视频字幕总结。
 - 浏览器插件。
 - 基于用户反馈的推荐权重学习。
@@ -204,7 +204,7 @@
 - `embed_document_chunks`：为已有文档 chunks 重新生成 embedding。
 - `cleanup_failed_jobs`：将超时的 running/retrying job 标记为 failed。
 
-这些任务复用现有 service，当前已覆盖测试。已配置 Celery Beat 定时调度、自动重试、worker 丢失拒收、prefetch 控制和基础任务监控接口。尚未完成更完整的告警、人工重放和生产运维面板。
+这些任务复用现有 service，当前已覆盖测试。已配置 Celery Beat 定时调度、自动重试、worker 丢失拒收、prefetch 控制、每日推荐推送和基础任务监控接口。尚未完成更完整的告警、人工重放和生产运维面板。
 
 ### 外部发现
 
@@ -221,14 +221,25 @@
 - 为当前用户生成推荐。
 - 发现内容不会直接创建 document。
 
+### 推送流程
+
+已实现：
+
+- `POST /api/push/daily`：当前用户手动触发每日推荐推送。
+- `GET /api/push/logs`：查看当前用户推送日志。
+- `push_daily_recommendations` Celery task：单用户每日推荐推送。
+- `push_daily_recommendations_for_active_users` Celery Beat 批处理入口。
+- `in_app` 渠道会写入站内推送日志。
+- `email` 和 `dingtalk` 渠道支持真实发送，但需要配置 SMTP 或 webhook；配置缺失时会记录 skipped。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
 
 - 更完整的任务监控告警、失败任务人工重放和生产运维面板。
 - 每日定时发现。
-- 邮件推送。
-- 钉钉推送。
+- 邮件真实发送需要 SMTP 配置；后续还需模板、退订、频控和投递告警。
+- 钉钉/邮件真实发送配置和生产投递监控。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 - 真实 GitHub API 集成。
 - 视频/PDF 完整解析。
@@ -252,7 +263,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：`pytest` 41 passed，`ruff check app` passed，前端 `npm run build` passed。
+最近通过结果：`pytest` 47 passed，`ruff check app` passed，前端 `npm run build` passed。
 
 ## 开发规则
 

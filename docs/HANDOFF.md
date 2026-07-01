@@ -9,7 +9,7 @@
 当前主要缺口：
 
 - 更完整的任务监控告警、失败任务人工重放和生产运维面板。
-- 邮件推送。
+- 更完整的推送模板、退订、频控和投递告警。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 
 ## 目录结构
@@ -86,7 +86,7 @@ PowerShell 激活虚拟环境：
 - `REDIS_URL`：Redis/Celery 连接。
 - `LLM_PROVIDER`：`mock`、`openai_compatible`、`deepseek` 或 `qwen`。
 - `LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL`、`EMBEDDING_MODEL`：真实模型配置。
-- SMTP 变量：预留给后续邮件推送。
+- SMTP 变量：用于邮件推送真实发送。
 
 测试环境在 `app/tests/conftest.py` 中强制使用 SQLite 和 mock LLM provider。
 
@@ -149,6 +149,11 @@ PowerShell 激活虚拟环境：
 
 尚未完成：更细的加载/错误状态、完整业务细节页、前端自动化测试、生产级体验打磨。
 
+推送：
+
+- `POST /api/push/daily`
+- `GET /api/push/logs`
+
 ## Celery 任务
 
 当前已注册核心任务入口和定时调度：
@@ -159,7 +164,7 @@ PowerShell 激活虚拟环境：
 - `embed_document_chunks`：为已有文档 chunks 重新生成 embedding。
 - `cleanup_failed_jobs`：将超时的 running/retrying job 标记为 failed。
 
-已补 Celery Beat 定时调度、任务自动重试策略和 `/api/tasks/health`、`/api/tasks/schedule` 基础监控接口。后续还需要更完整的告警、失败任务人工重放和生产运维面板。
+已补 Celery Beat 定时调度、任务自动重试策略、每日推荐推送任务和 `/api/tasks/health`、`/api/tasks/schedule` 基础监控接口。后续还需要更完整的告警、失败任务人工重放和生产运维面板。
 
 ## 核心流程
 
@@ -206,6 +211,14 @@ PowerShell 激活虚拟环境：
 3. 为当前用户生成推荐。
 4. 不会自动创建 document。
 
+### 推送流程
+
+1. 系统读取用户偏好和 pending 推荐。
+2. 根据 `push_channel` 选择站内、邮件或钉钉。
+3. 站内渠道只写 `push_logs`。
+4. 邮件和钉钉需要 SMTP 或 webhook 配置，缺失时记录 skipped，不会误发。
+5. Celery Beat 会批量为活跃用户触发每日推荐推送。
+
 ## 安全规则
 
 - 所有私有数据必须按 `user_id` 过滤。
@@ -236,7 +249,7 @@ pytest
 ruff check app
 ```
 
-最近结果：`pytest` 41 passed，`ruff check app` passed，前端 `npm run build` passed。
+最近结果：`pytest` 47 passed，`ruff check app` passed，前端 `npm run build` passed。
 
 ## 已知风险
 
@@ -251,7 +264,7 @@ ruff check app
 ## 建议下一步
 
 1. 完成更完整的任务监控告警、失败任务人工重放和生产运维面板。
-2. 实现邮件推送和带签名的操作链接。
+2. 增强推送模板、退订、频控、投递告警和带签名的操作链接。
 3. 实现前端页面：login、register、dashboard、ingest、recommendations、documents、search、settings。
 4. 将搜索排序迁移到 PostgreSQL/pgvector。
 5. 增加 Docker Compose 端到端验证。
