@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #08111f;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.radar-sweep::before {
+  animation: radar-spin 5s linear infinite;
+  background: conic-gradient(from 90deg, rgba(103, 232, 249, 0.5), rgba(103, 232, 249, 0.06), transparent 42%);
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  mask: radial-gradient(circle, transparent 0 18%, #000 19% 100%);
+  position: absolute;
+}
+
+.radar-sweep::after {
+  animation: radar-pulse 2.8s ease-out infinite;
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  border-radius: inherit;
+  content: "";
+  inset: 34%;
+  position: absolute;
+}
+
+.topic-pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: 0 18px 60px rgba(8, 17, 31, 0.24);
+  color: rgba(226, 232, 240, 0.92);
+  font-size: 0.82rem;
+  padding: 0.5rem 0.8rem;
+  position: absolute;
+}
+
+.topic-0 { left: 11%; top: 18%; }
+.topic-1 { right: 12%; top: 16%; }
+.topic-2 { left: 16%; bottom: 20%; }
+.topic-3 { right: 13%; bottom: 24%; }
+.topic-4 { left: 42%; top: 10%; }
+.topic-5 { left: 40%; bottom: 10%; }
+
+@keyframes radar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radar-pulse {
+  0% {
+    opacity: 0.75;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
