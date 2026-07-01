@@ -321,7 +321,7 @@ ruff check app
 
 ### 已确认仍需修补
 
-- `RecommenderAgent` 已接入模型辅助决策并保留规则 fallback；仍缺真实 provider 评估、用户反馈学习和个性化权重。
+- `RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；后续还需管理员后台和审计查询 UI/API。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
@@ -347,6 +347,7 @@ ruff check app
 - 已完成 RAG 生产质量增强第一批：模型失败降级、上下文截断和 prompt 注入防护提示。
 - 已完成 Docker smoke 增强第一批：task 认证适配、pgvector extension 断言和失败日志收集。
 - 已完成管理员权限和审计日志基础：`users.is_admin`、管理员依赖、task 监控管理员保护和审计写入。
+- 已完成推荐反馈加权第一批：saved/disliked/ignored 历史会影响后续相似推荐评分。
 
 ### 已修补或部分过期
 
@@ -359,7 +360,7 @@ ruff check app
 
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性评估、召回评估、rerank 和人工反馈调优。
-3. 推荐质量增强：真实 provider 评估、用户反馈学习、个性化权重和去重排序策略。
+3. 推荐质量增强：真实 provider 评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 增强 Docker Compose 集成验证：接入 CI、真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全加固增强：管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
 6. 前端工程化增强：React Query、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。

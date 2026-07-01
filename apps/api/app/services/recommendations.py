@@ -61,18 +61,59 @@ class RecommendationService:
                 "enabled_categories": preference.enabled_categories if preference else [],
             }
         )
+        feedback_adjustment, feedback_reason = self._feedback_adjustment(
+            user_id,
+            category=decision.category,
+            tags=decision.matched_interests,
+        )
+        adjusted_score = max(0.0, min(100.0, float(decision.score) + feedback_adjustment))
+        reason = decision.reason
+        if feedback_reason:
+            reason = f"{reason} {feedback_reason}"
         return self.create_recommendation(
             user_id,
             RecommendationCreate(
                 content_id=content.id,
-                score=float(decision.score),
+                score=adjusted_score,
                 category=decision.category,
                 summary=(content.raw_text or content.title or "")[:300],
-                reason=decision.reason,
+                reason=reason,
                 tags=decision.matched_interests,
                 status=RecommendationStatus.PENDING.value,
             ),
         )
+
+    def _feedback_adjustment(self, user_id: UUID, *, category: str, tags: list[str]) -> tuple[float, str | None]:
+        history = self.recommendations.list_by_statuses_for_user(
+            user_id,
+            [
+                RecommendationStatus.SAVED.value,
+                RecommendationStatus.DISLIKED.value,
+                RecommendationStatus.IGNORED.value,
+            ],
+        )
+        tag_set = {tag.lower() for tag in tags}
+        adjustment = 0.0
+        positive = 0
+        negative = 0
+        for item in history:
+            same_category = item.category == category
+            shared_tags = bool(tag_set.intersection(tag.lower() for tag in item.tags))
+            if not same_category and not shared_tags:
+                continue
+            if item.status == RecommendationStatus.SAVED.value:
+                positive += 1
+                adjustment += 8.0 if shared_tags else 4.0
+            elif item.status == RecommendationStatus.DISLIKED.value:
+                negative += 1
+                adjustment -= 20.0 if shared_tags else 10.0
+            elif item.status == RecommendationStatus.IGNORED.value:
+                negative += 1
+                adjustment -= 8.0 if shared_tags else 4.0
+        adjustment = max(-40.0, min(24.0, adjustment))
+        if positive or negative:
+            return adjustment, f"用户反馈调整：+{positive}/-{negative}，分数调整 {adjustment:+.0f}。"
+        return 0.0, None
 
     def set_status(self, user_id: UUID, recommendation_id: UUID, new_status: RecommendationStatus) -> Recommendation:
         recommendation = self.recommendations.update_status_for_user(

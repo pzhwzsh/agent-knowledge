@@ -61,6 +61,15 @@ class RecommendationRepository:
         self.db.flush()
         return recommendation
 
+    def list_by_statuses_for_user(self, user_id: UUID, statuses: list[str], *, limit: int = 100) -> list[Recommendation]:
+        statement = (
+            select(Recommendation)
+            .where(Recommendation.user_id == user_id, Recommendation.status.in_(statuses))
+            .order_by(Recommendation.updated_at.desc())
+            .limit(limit)
+        )
+        return list(self.db.scalars(statement))
+
     def list_pending_for_push(self, user_id: UUID, *, limit: int = 10) -> list[Recommendation]:
         statement = (
             select(Recommendation)

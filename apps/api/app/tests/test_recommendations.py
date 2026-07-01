@@ -125,3 +125,40 @@ def test_recommendations_are_isolated_by_current_user(client: TestClient, db_ses
     assert [item["id"] for item in alice_list.json()] == [alice_rec["id"]]
     assert bob_save_alice.status_code == 404
     assert alice_rec["id"] != bob_rec["id"]
+
+def test_recommendation_feedback_adjusts_future_scores(client: TestClient, db_session: Session) -> None:
+    token = register_and_login(client, "rec-feedback@example.com")
+    client.put(
+        "/api/preferences",
+        headers=auth_header(token),
+        json={"interests": ["fastapi"], "enabled_categories": ["other"]},
+    )
+
+    first_content = create_content(client, token, db_session, "fastapi saved feedback article " * 20)
+    first = client.post(
+        "/api/recommendations/generate",
+        headers=auth_header(token),
+        json={"content_id": first_content},
+    ).json()
+    client.post(f"/api/recommendations/{first['id']}/save", headers=auth_header(token))
+
+    boosted_content = create_content(client, token, db_session, "fastapi boosted feedback article " * 20)
+    boosted = client.post(
+        "/api/recommendations/generate",
+        headers=auth_header(token),
+        json={"content_id": boosted_content},
+    ).json()
+
+    assert boosted["score"] > first["score"]
+    assert "用户反馈调整" in boosted["reason"]
+
+    client.post(f"/api/recommendations/{boosted['id']}/dislike", headers=auth_header(token))
+    penalized_content = create_content(client, token, db_session, "fastapi penalized feedback article " * 20)
+    penalized = client.post(
+        "/api/recommendations/generate",
+        headers=auth_header(token),
+        json={"content_id": penalized_content},
+    ).json()
+
+    assert penalized["score"] < boosted["score"]
+    assert "用户反馈调整" in penalized["reason"]

@@ -199,6 +199,7 @@
 已实现行为：
 
 - `RecommenderAgent` 会调用 `ChatModel` 输出结构化推荐决策，模型异常时回退到兴趣/负向关键词/分类规则评分。
+- 推荐生成会读取当前用户历史 saved/disliked/ignored 推荐，对相似分类或标签做第一版反馈加权。
 - 推荐默认进入 pending 状态。
 - 保存推荐时才创建 document。
 - 保存复用 document 入库幂等流程。
@@ -407,6 +408,17 @@
 
 仍需继续：管理员后台、审计日志查询 API/UI、token 黑名单或服务端会话撤销、更细权限分级。
 
+### 第二十三阶段：推荐反馈加权第一批
+
+本阶段已完成：
+
+- 推荐生成会读取当前用户历史 `saved`、`disliked`、`ignored` 记录。
+- 与历史记录同分类或共享标签时，会根据用户反馈调整后续推荐分数。
+- `saved` 相似内容加分，`disliked` 和 `ignored` 相似内容降分，并在 reason 中说明反馈调整。
+- 已补充用户反馈影响后续推荐评分测试。
+
+仍需继续：更完整的学习型推荐、时间衰减、反馈权重配置、重复内容去重、A/B 或人工质量评估。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -448,7 +460,7 @@
 
 以下问题仍然成立，需要优先修补：
 
-- 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback；仍缺真实 provider 评估、用户反馈学习和个性化权重。
+- 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试；仍缺管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
 - 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
@@ -471,7 +483,7 @@
 
 1. 文档口径修正：所有文档必须明确区分“真实能力 / mock 能力 / 占位能力 / 生产待办”。
 2. RAG 评估增强：补真实 provider 集成验证、答案质量评估、引用编号稳定性评估、召回评估和 rerank。
-3. 推荐质量增强：补真实 provider 推荐评估、用户反馈学习、个性化权重和去重排序策略。
+3. 推荐质量增强：补真实 provider 推荐评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 集成验证增强：将 Docker smoke test 接入 CI，补真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全收口增强：增加管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
 6. 前端工程化增强：实际接入 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
