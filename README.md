@@ -78,11 +78,6 @@ docker compose up --build
 docker compose exec api alembic upgrade head
 ```
 
-默认本地地址：
-
-- 后端 API：http://localhost:8000
-- 前端页面：http://localhost:3000
-- 健康检查：http://localhost:8000/health
 
 ## 主要 API
 
