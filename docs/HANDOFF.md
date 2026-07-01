@@ -177,7 +177,7 @@ PowerShell 激活虚拟环境：
 5. 文本直接使用；URL 先校验安全性再抓取。
 6. 创建或复用全局 content。
 7. RouterAgent 选择路由和分类。
-8. mock Agent 生成摘要。
+8. summary Agent 调用 `ChatModel` 生成结构化摘要；模型输出异常时降级为基础摘要。
 9. 记录 agent run。
 10. 更新 job 为 success 或 failed。
 
@@ -274,7 +274,6 @@ ruff check app
 
 ### 已确认仍需修补
 
-- `GeneralAgent` 是规则/截断式摘要，不是真 LLM 总结。
 - `RecommenderAgent` 是规则评分，不是真模型推荐或学习型推荐。
 - SQLite + mock LLM 单元测试不能替代 PostgreSQL/pgvector/Celery/真实 provider 集成验证。
 - `/api/tasks/health` 和 `/api/tasks/schedule` 当前未加认证或管理员保护。
@@ -289,7 +288,8 @@ ruff check app
 - `/api/ingestions` 主接口已从同步处理改为创建 pending job 并投递 Celery，返回 `202 Accepted` 和 `task_id`。
 - 前端快速采集已改为异步提交提示，提交后刷新任务列表，不再假设立即拿到 content。
 - `SearchService.chat()` 已从模板拼接改为检索后调用 `ChatModel` 生成答案，并继续返回 citations。
-- 已更新受影响后端测试，覆盖异步提交、worker 处理、下游文档/推荐/搜索链路和 RAG prompt。
+- `GeneralAgent`、`GitHubAgent`、`LifestyleAgent` 已从规则/固定摘要改为调用 `ChatModel` 生成结构化 JSON，并保留 fallback。
+- 已更新受影响后端测试，覆盖异步提交、worker 处理、下游文档/推荐/搜索链路、RAG prompt 和 summary fallback。
 
 ### 已修补或部分过期
 
@@ -301,10 +301,11 @@ ruff check app
 ### 建议下一步顺序
 
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
-2. 增强 RAG 生产质量：真实 provider 验证、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
-3. 增加 Docker Compose 集成验证：Alembic upgrade、Postgres pgvector 查询、Celery worker/beat 投递、API smoke test。
-4. 安全加固：task 接口认证、SSRF 重定向复查、token/登出策略。
-5. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
+2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
+3. 将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
+4. 增加 Docker Compose 集成验证：Alembic upgrade、Postgres pgvector 查询、Celery worker/beat 投递、API smoke test。
+5. 安全加固：task 接口认证、SSRF 重定向复查、token/登出策略。
+6. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
 
 ## 建议下一步
 

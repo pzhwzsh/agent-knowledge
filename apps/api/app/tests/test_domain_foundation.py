@@ -1,5 +1,8 @@
+from collections.abc import Sequence
+
 from sqlalchemy.orm import Session
 
+from app.agents.general import GeneralAgent
 from app.agents.github import GitHubAgent
 from app.agents.lifestyle import LifestyleAgent
 from app.agents.router import RouterAgent
@@ -83,10 +86,39 @@ def test_router_agent_selects_github_route() -> None:
     assert result.category == "programming"
 
 
-def test_mock_specialized_agents_return_structured_outputs() -> None:
-    lifestyle = LifestyleAgent().run({"text": "??????"})
-    github = GitHubAgent().run({"description": "A demo repo", "topics": ["python"], "stars": 42})
+class FakeJsonChatModel:
+    def __init__(self, response: str) -> None:
+        self.response = response
+        self.messages: list[dict[str, str]] = []
+
+    def complete(self, messages: Sequence[dict[str, str]]) -> str:
+        self.messages.extend(messages)
+        return self.response
+
+
+def test_llm_summary_agents_return_structured_outputs() -> None:
+    lifestyle_model = FakeJsonChatModel(
+        '{"advice":["Drink water"],"audience":"office workers","cautions":["do not overdo it"],"risks":[],"checklist":["prepare water"],"worth_saving":true}'
+    )
+    github_model = FakeJsonChatModel(
+        '{"purpose":"A demo repo","tech_stack":["python"],"core_features":["demo"],"use_cases":["learning"],"learning_value":"high","interview_value":"medium","reusable_design":["service layer"],"readme_summary":"short","metadata":{"stars":42,"topics":["python"]}}'
+    )
+
+    lifestyle = LifestyleAgent(chat_model=lifestyle_model).run({"text": "daily hydration tips"})
+    github = GitHubAgent(chat_model=github_model).run({"description": "A demo repo", "topics": ["python"], "stars": 42})
 
     assert lifestyle.worth_saving is True
+    assert lifestyle.advice == ["Drink water"]
     assert github.metadata["stars"] == 42
     assert github.tech_stack == ["python"]
+    assert "JSON schema" in github_model.messages[-1]["content"]
+
+
+def test_general_agent_falls_back_when_model_returns_non_json() -> None:
+    agent = GeneralAgent(chat_model=FakeJsonChatModel("not json"))
+
+    summary = agent.run({"title": "Fallback", "text": "fallback content", "source": "local"})
+
+    assert summary.title == "Fallback"
+    assert summary.short_summary == "fallback content"
+    assert "fallback" in summary.tags

@@ -15,7 +15,7 @@
 - 抓取网页正文并提取可读内容。
 - URL 安全检查，阻止 localhost、内网地址和保留地址，降低 SSRF 风险。
 - 全局内容表 `contents` 去重。
-- RouterAgent 路由和 mock Agent 摘要。
+- RouterAgent 路由和基于 `ChatModel` 的结构化摘要 Agent；模型返回异常时会降级为基础摘要。
 - 将内容保存到当前用户的私有知识库。
 - 文档切片和 embedding 生成。
 - 在当前用户自己的文档中做语义搜索，PostgreSQL 使用 pgvector 数据库侧排序，SQLite 测试环境自动回退到 Python 余弦相似度。
