@@ -194,7 +194,7 @@ PowerShell 激活虚拟环境：
 1. 用户发送搜索词或问题。
 2. 系统生成 query embedding。
 3. 只检索当前用户自己的 chunks。
-4. 使用 Python 侧余弦相似度排序。
+4. PostgreSQL 使用 pgvector 数据库侧 cosine distance 排序；SQLite 测试环境回退到 Python 侧余弦相似度排序。
 5. chat 返回答案和 citations。
 
 ### 推荐箱
@@ -249,7 +249,7 @@ pytest
 ruff check app
 ```
 
-最近结果：`pytest` 47 passed，`ruff check app` passed，前端 `npm run build` passed。
+最近结果：`pytest` 48 passed，`ruff check app` passed，前端 `npm run build` passed。
 
 ## 已知风险
 

@@ -72,7 +72,6 @@ class DocumentChunkRepository:
         self.db.flush()
         return chunk
 
-
     def list_searchable_for_user(self, user_id: UUID) -> list[DocumentChunk]:
         statement = (
             select(DocumentChunk)
@@ -80,3 +79,23 @@ class DocumentChunkRepository:
             .where(DocumentChunk.user_id == user_id, DocumentChunk.embedding.is_not(None))
         )
         return list(self.db.scalars(statement))
+
+    def search_similar_for_user(
+        self,
+        user_id: UUID,
+        query_embedding: list[float],
+        *,
+        limit: int,
+    ) -> list[tuple[DocumentChunk, float]] | None:
+        if self.db.bind is None or self.db.bind.dialect.name != "postgresql":
+            return None
+
+        distance = DocumentChunk.embedding.cosine_distance(query_embedding)
+        statement = (
+            select(DocumentChunk, (1 - distance).label("score"))
+            .options(joinedload(DocumentChunk.document))
+            .where(DocumentChunk.user_id == user_id, DocumentChunk.embedding.is_not(None))
+            .order_by(distance.asc())
+            .limit(limit)
+        )
+        return [(chunk, float(score)) for chunk, score in self.db.execute(statement).all()]

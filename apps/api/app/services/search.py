@@ -34,7 +34,7 @@ class SearchService:
         )
         if not search_response.results:
             return ChatResponse(
-                answer="????????????????????????",
+                answer="不知道。你的知识库里还没有足够的相关内容。",
                 citations=[],
                 related_documents=[],
             )
@@ -50,10 +50,10 @@ class SearchService:
         ]
         facts = "\n".join(f"- {result.content}" for result in search_response.results[:3])
         answer = (
-            "???\n"
+            "根据你的知识库，可以参考以下内容：\n"
             f"{facts}\n\n"
-            "?????????????????????????????????\n\n"
-            "???????????????????????????????????????"
+            "以上回答只基于当前检索到的个人知识库片段。\n\n"
+            "建议继续打开引用文档查看完整上下文。"
         )
         return ChatResponse(
             answer=answer,
@@ -68,6 +68,10 @@ class SearchService:
         *,
         limit: int,
     ) -> list[tuple[DocumentChunk, float]]:
+        database_ranked = self.chunks.search_similar_for_user(user_id, query_embedding, limit=limit)
+        if database_ranked is not None:
+            return database_ranked
+
         ranked: list[tuple[DocumentChunk, float]] = []
         for chunk in self.chunks.list_searchable_for_user(user_id):
             if chunk.embedding is None:

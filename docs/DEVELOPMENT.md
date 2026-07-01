@@ -162,7 +162,7 @@
 
 - 对问题生成 embedding。
 - 只检索当前用户自己的 chunks。
-- Python 侧余弦相似度排序。
+- PostgreSQL 使用 pgvector 数据库侧 cosine distance 排序；SQLite 测试环境回退到 Python 侧余弦相似度排序。
 - 问答返回 citations。
 - 没有上下文时明确回答不知道。
 
@@ -247,7 +247,7 @@
 - 管理后台。
 - 数据导出。
 - token 成本统计。
-- 生产级 pgvector SQL 排序。
+- 更细的 pgvector 参数调优、召回评估和重排策略。
 
 ## 测试现状
 
@@ -263,7 +263,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：`pytest` 47 passed，`ruff check app` passed，前端 `npm run build` passed。
+最近通过结果：`pytest` 48 passed，`ruff check app` passed，前端 `npm run build` passed。
 
 ## 开发规则
 
