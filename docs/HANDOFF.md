@@ -294,7 +294,7 @@ ruff check app
 - GitHub Trending 解析依赖 GitHub HTML 结构，页面变化可能导致失效。
 - RSS parser 是基础实现，不能覆盖所有 feed 边界情况。
 - 前端已有多页面工作台，API client 已补超时、AbortController 和 401 登录过期处理；React Query、全局 toast/loading/error boundary 和自动化测试仍偏弱。
-- 真实 LLM provider 接口已实现，但测试主要覆盖 mock 和 provider 解析逻辑。
+- 真实 LLM provider 接口已实现，但测试主要覆盖 mock 和 provider 解析逻辑；RAG 已补模型失败降级、上下文截断和 prompt 注入防护提示。
 
 ## 二期第一批交付结论
 
@@ -334,7 +334,7 @@ ruff check app
 
 - `/api/ingestions` 主接口已从同步处理改为创建 pending job 并投递 Celery，返回 `202 Accepted` 和 `task_id`。
 - 前端快速采集已改为异步提交提示，提交后刷新任务列表，不再假设立即拿到 content。
-- `SearchService.chat()` 已从模板拼接改为检索后调用 `ChatModel` 生成答案，并继续返回 citations。
+- `SearchService.chat()` 已从模板拼接改为检索后调用 `ChatModel` 生成答案，并继续返回 citations；已补模型失败降级、上下文截断和 prompt 注入防护提示。
 - `GeneralAgent`、`GitHubAgent`、`LifestyleAgent` 已从规则/固定摘要改为调用 `ChatModel` 生成结构化 JSON，并保留 fallback。
 - 已更新受影响后端测试，覆盖异步提交、worker 处理、下游文档/推荐/搜索链路、RAG prompt 和 summary fallback。
 - 已新增 Docker Compose smoke 脚本，覆盖 Alembic、API、worker、beat 和异步 ingestion 最小链路。
@@ -344,6 +344,7 @@ ruff check app
 - 已完成前端 API client 工程化第一批：默认超时、AbortController、统一 ApiError 和 401 登录过期事件。
 - 已完成生产可复现第一批：前端依赖锁定，新增 `docker-compose.prod.yml`，web 生产模式使用 build + start。
 - 已完成推荐模型化第一批：`RecommenderAgent` 调用 `ChatModel` 输出结构化推荐决策，并保留规则 fallback。
+- 已完成 RAG 生产质量增强第一批：模型失败降级、上下文截断和 prompt 注入防护提示。
 
 ### 已修补或部分过期
 
@@ -355,7 +356,7 @@ ruff check app
 ### 建议下一步顺序
 
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
-2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
+2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性评估、召回评估、rerank 和人工反馈调优。
 3. 推荐质量增强：真实 provider 评估、用户反馈学习、个性化权重和去重排序策略。
 4. 增强 Docker Compose 集成验证：接入 CI、补 pgvector SQL 查询、真实 provider 可选验证和失败日志收集。
 5. 安全加固增强：管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
