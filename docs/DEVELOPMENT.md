@@ -182,7 +182,7 @@
 
 已实现行为：
 
-- `RecommenderAgent` 目前仍根据兴趣、不感兴趣关键词和分类做规则评分。
+- `RecommenderAgent` 会调用 `ChatModel` 输出结构化推荐决策，模型异常时回退到兴趣/负向关键词/分类规则评分。
 - 推荐默认进入 pending 状态。
 - 保存推荐时才创建 document。
 - 保存复用 document 入库幂等流程。
@@ -345,6 +345,17 @@
 
 仍需继续：npm audit 报告 2 个 moderate 漏洞，后续需要单独评估升级；生产镜像还可进一步改成多阶段构建以减小体积。
 
+### 第十九阶段：推荐模型化第一批
+
+本阶段已完成：
+
+- `RecommenderAgent` 已接入 `ChatModel`。
+- 模型需要返回符合 `RecommendationDecision` schema 的严格 JSON。
+- 模型输出异常时保留原规则评分 fallback。
+- 已补充模型推荐成功输出和 fallback 测试。
+
+仍需继续：真实 provider 下的推荐质量评估、用户反馈学习、个性化权重调整、推荐去重和排序策略。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -376,7 +387,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：二期安全、任务运维、推送控制相关测试已通过；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。此前 summary/RAG/异步采集相关测试通过，全量后端测试为 48 passed。
+最近通过结果：二期推荐模型化、summary、推荐 API 相关测试已通过；二期安全、任务运维、推送控制相关测试已通过；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 外部分析核对与修补计划
 
@@ -386,7 +397,7 @@
 
 以下问题仍然成立，需要优先修补：
 
-- 推荐边界仍需收口：`RecommenderAgent` 仍是规则评分，不是真正模型推荐或学习型推荐。
+- 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback；仍缺真实 provider 评估、用户反馈学习和个性化权重。
 - 集成验证仍需增强：已新增 Docker Compose smoke 脚本，但尚未接入 CI，也还缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
 - 安全收口还需继续：task health/schedule 已要求登录，URL 重定向后 SSRF 已复查并加测试；仍缺管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 - 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
@@ -409,7 +420,7 @@
 
 1. 文档口径修正：所有文档必须明确区分“真实能力 / mock 能力 / 占位能力 / 生产待办”。
 2. RAG 评估增强：补真实 provider 集成验证、答案质量评估、引用格式约束和失败降级策略。
-3. 真实推荐：将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
+3. 推荐质量增强：补真实 provider 推荐评估、用户反馈学习、个性化权重和去重排序策略。
 4. 集成验证增强：将 Docker smoke test 接入 CI，补 pgvector SQL 断言、真实 provider 可选验证和失败日志收集。
 5. 安全收口增强：增加管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 6. 前端工程化增强：实际接入 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。

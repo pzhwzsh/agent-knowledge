@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.agents.general import GeneralAgent
 from app.agents.github import GitHubAgent
 from app.agents.lifestyle import LifestyleAgent
+from app.agents.recommender import RecommenderAgent
 from app.agents.router import RouterAgent
 from app.core.security import hash_password
 from app.models.user import User
@@ -122,3 +123,36 @@ def test_general_agent_falls_back_when_model_returns_non_json() -> None:
     assert summary.title == "Fallback"
     assert summary.short_summary == "fallback content"
     assert "fallback" in summary.tags
+
+
+def test_recommender_agent_uses_model_decision() -> None:
+    model = FakeJsonChatModel(
+        '{"score":88,"should_push":true,"reason":"模型判断很匹配","matched_interests":["fastapi"],"negative_signals":[],"category":"other"}'
+    )
+
+    decision = RecommenderAgent(chat_model=model).run(
+        {"title": "FastAPI", "text": "agent knowledge", "category": "other", "interests": ["fastapi"]}
+    )
+
+    assert decision.score == 88
+    assert decision.should_push is True
+    assert decision.reason == "模型判断很匹配"
+    assert decision.matched_interests == ["fastapi"]
+    assert "判断内容是否值得推荐" in model.messages[-1]["content"]
+
+
+def test_recommender_agent_falls_back_to_rules_when_model_returns_non_json() -> None:
+    decision = RecommenderAgent(chat_model=FakeJsonChatModel("not json")).run(
+        {
+            "title": "FastAPI article",
+            "text": "fastapi knowledge",
+            "category": "other",
+            "interests": ["fastapi"],
+            "negative_interests": [],
+            "enabled_categories": ["other"],
+        }
+    )
+
+    assert decision.score >= 70
+    assert decision.should_push is True
+    assert decision.matched_interests == ["fastapi"]

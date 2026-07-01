@@ -282,7 +282,7 @@ pytest
 ruff check app
 ```
 
-最近结果：二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed，前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed。
+最近结果：二期推荐模型化、summary、推荐 API 相关测试通过；二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed，前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 已知风险
 
@@ -305,7 +305,7 @@ ruff check app
 
 ### 已确认仍需修补
 
-- `RecommenderAgent` 是规则评分，不是真模型推荐或学习型推荐。
+- `RecommenderAgent` 已接入模型辅助决策并保留规则 fallback；仍缺真实 provider 评估、用户反馈学习和个性化权重。
 - 已新增 Docker Compose smoke 脚本，但还没接入 CI，也缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已要求登录；后续还需管理员权限模型。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
@@ -327,6 +327,7 @@ ruff check app
 - 已完成推送控制第一批：支持禁用推送通道和基于 push log 的当日成功推送频控。
 - 已完成前端 API client 工程化第一批：默认超时、AbortController、统一 ApiError 和 401 登录过期事件。
 - 已完成生产可复现第一批：前端依赖锁定，新增 `docker-compose.prod.yml`，web 生产模式使用 build + start。
+- 已完成推荐模型化第一批：`RecommenderAgent` 调用 `ChatModel` 输出结构化推荐决策，并保留规则 fallback。
 
 ### 已修补或部分过期
 
@@ -339,7 +340,7 @@ ruff check app
 
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
-3. 将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
+3. 推荐质量增强：真实 provider 评估、用户反馈学习、个性化权重和去重排序策略。
 4. 增强 Docker Compose 集成验证：接入 CI、补 pgvector SQL 查询、真实 provider 可选验证和失败日志收集。
 5. 安全加固增强：管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 6. 前端工程化增强：React Query、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。

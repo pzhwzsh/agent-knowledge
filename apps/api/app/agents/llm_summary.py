@@ -8,7 +8,7 @@ from app.llm.base import ChatModel
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
 
-def complete_json_summary(
+def complete_json(
     chat_model: ChatModel,
     *,
     schema: type[SchemaT],
@@ -58,3 +58,14 @@ def _strip_fenced_json(text: str) -> str:
     if lines and lines[-1].strip() == "```":
         lines = lines[:-1]
     return "\n".join(lines).strip()
+
+
+def complete_json_summary(
+    chat_model: ChatModel,
+    *,
+    schema: type[SchemaT],
+    task: str,
+    payload: dict[str, object],
+    fallback: SchemaT,
+) -> SchemaT:
+    return complete_json(chat_model, schema=schema, task=task, payload=payload, fallback=fallback)
