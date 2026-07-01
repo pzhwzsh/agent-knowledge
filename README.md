@@ -19,7 +19,7 @@
 - 将内容保存到当前用户的私有知识库。
 - 文档切片和 embedding 生成。
 - 在当前用户自己的文档中做语义搜索，PostgreSQL 使用 pgvector 数据库侧排序，SQLite 测试环境自动回退到 Python 余弦相似度。
-- 基于自己的知识库进行带引用问答。
+- 基于自己的知识库进行 RAG 问答：先检索当前用户私有文档片段，再调用 `ChatModel` 生成答案并返回引用。
 - 推荐箱：推荐内容不会自动入库。
 - 推荐操作：忽略、不感兴趣、保存。
 - GitHub Trending 和 RSS 发现，发现结果进入推荐箱，不直接进入知识库。
@@ -111,7 +111,7 @@ docker compose exec api alembic upgrade head
 搜索和问答：
 
 - `POST /api/search`
-- `POST /api/chat`
+- `POST /api/chat`：基于当前用户知识库片段调用 `ChatModel` 生成带引用答案。
 
 推荐箱：
 

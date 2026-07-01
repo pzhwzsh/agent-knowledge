@@ -3,7 +3,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from app.llm.providers import get_embedding_model
+from app.llm.base import ChatModel, EmbeddingModel
+from app.llm.providers import get_chat_model, get_embedding_model
 from app.models.document import DocumentChunk
 from app.repositories.documents import DocumentChunkRepository
 from app.schemas.search import (
@@ -17,10 +18,17 @@ from app.schemas.search import (
 
 
 class SearchService:
-    def __init__(self, db: Session) -> None:
+    def __init__(
+        self,
+        db: Session,
+        *,
+        embedding_model: EmbeddingModel | None = None,
+        chat_model: ChatModel | None = None,
+    ) -> None:
         self.db = db
         self.chunks = DocumentChunkRepository(db)
-        self.embedding_model = get_embedding_model()
+        self.embedding_model = embedding_model or get_embedding_model()
+        self.chat_model = chat_model or get_chat_model()
 
     def search(self, user_id: UUID, payload: SearchRequest) -> SearchResponse:
         query_embedding = self.embedding_model.embed(payload.query)
@@ -48,17 +56,37 @@ class SearchService:
             )
             for result in search_response.results
         ]
-        facts = "\n".join(f"- {result.content}" for result in search_response.results[:3])
-        answer = (
-            "根据你的知识库，可以参考以下内容：\n"
-            f"{facts}\n\n"
-            "以上回答只基于当前检索到的个人知识库片段。\n\n"
-            "建议继续打开引用文档查看完整上下文。"
+        answer = self.chat_model.complete(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "你是个人知识库问答助手。只能基于用户提供的知识库片段回答；"
+                        "如果片段不足以回答，明确说不知道。回答要简洁，并尽量标注引用编号，如 [1]。"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": self._build_rag_prompt(payload.question, search_response.results),
+                },
+            ]
         )
         return ChatResponse(
             answer=answer,
             citations=citations,
             related_documents=search_response.results,
+        )
+
+
+    def _build_rag_prompt(self, question: str, results: list[SearchResult]) -> str:
+        context = "\n\n".join(
+            f"[{index}] 标题：{result.title}\n内容：{result.content}"
+            for index, result in enumerate(results, start=1)
+        )
+        return (
+            f"问题：{question}\n\n"
+            f"知识库片段：\n{context}\n\n"
+            "请只基于这些片段回答，并在答案中保留必要引用编号。"
         )
 
     def _rank_chunks(

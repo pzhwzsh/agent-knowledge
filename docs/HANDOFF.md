@@ -197,7 +197,7 @@ PowerShell 激活虚拟环境：
 2. 系统生成 query embedding。
 3. 只检索当前用户自己的 chunks。
 4. PostgreSQL 使用 pgvector 数据库侧 cosine distance 排序；SQLite 测试环境回退到 Python 侧余弦相似度排序。
-5. chat 返回答案和 citations。
+5. chat 把检索片段传给 `ChatModel` 生成答案，并返回 citations。
 
 ### 推荐箱
 
@@ -251,7 +251,7 @@ pytest
 ruff check app
 ```
 
-最近结果：异步采集影响范围测试 25 passed，`ruff check app` passed；此前全量后端测试 48 passed，前端 `npm run build` passed。
+最近结果：RAG/异步采集相关测试通过，`ruff check app` passed；此前全量后端测试 48 passed，前端 `npm run build` passed。
 
 ## 已知风险
 
@@ -270,13 +270,12 @@ ruff check app
 
 - 当前项目已经具备多用户、知识库、推荐、搜索、推送、前端工作台等骨架和部分真实能力。
 - 但仍不是完整生产产品，代码中同时存在真实能力、mock 能力、占位模型和生产待办。
-- 文档描述必须避免过度乐观，尤其是 summary、recommendation、chat、真实部署验证这些部分；Celery ingestion 异步化已完成，但生产告警和人工重放还没完成。
+- 文档描述必须避免过度乐观，尤其是 summary、recommendation、真实部署验证这些部分；Celery ingestion 异步化和 ChatModel RAG 基础接入已完成，但仍缺生产告警、人工重放和真实 provider 质量评估。
 
 ### 已确认仍需修补
 
 - `GeneralAgent` 是规则/截断式摘要，不是真 LLM 总结。
 - `RecommenderAgent` 是规则评分，不是真模型推荐或学习型推荐。
-- `SearchService.chat()` 目前是检索片段模板拼接，不是真正 LLM RAG。
 - SQLite + mock LLM 单元测试不能替代 PostgreSQL/pgvector/Celery/真实 provider 集成验证。
 - `/api/tasks/health` 和 `/api/tasks/schedule` 当前未加认证或管理员保护。
 - URL 抓取要确认重定向后的最终 URL 也经过 SSRF 校验。
@@ -289,7 +288,8 @@ ruff check app
 
 - `/api/ingestions` 主接口已从同步处理改为创建 pending job 并投递 Celery，返回 `202 Accepted` 和 `task_id`。
 - 前端快速采集已改为异步提交提示，提交后刷新任务列表，不再假设立即拿到 content。
-- 已更新受影响后端测试，覆盖异步提交、worker 处理和下游文档/推荐/搜索链路。
+- `SearchService.chat()` 已从模板拼接改为检索后调用 `ChatModel` 生成答案，并继续返回 citations。
+- 已更新受影响后端测试，覆盖异步提交、worker 处理、下游文档/推荐/搜索链路和 RAG prompt。
 
 ### 已修补或部分过期
 
@@ -301,7 +301,7 @@ ruff check app
 ### 建议下一步顺序
 
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
-2. 接入真实 LLM RAG：chat 调用 `ChatModel`，summary 调用模型生成。
+2. 增强 RAG 生产质量：真实 provider 验证、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
 3. 增加 Docker Compose 集成验证：Alembic upgrade、Postgres pgvector 查询、Celery worker/beat 投递、API smoke test。
 4. 安全加固：task 接口认证、SSRF 重定向复查、token/登出策略。
 5. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。

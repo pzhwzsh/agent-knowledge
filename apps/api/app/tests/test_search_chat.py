@@ -1,4 +1,6 @@
+from collections.abc import Sequence
 from uuid import UUID
+
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -57,7 +59,17 @@ def test_semantic_search_returns_current_user_chunks_only(client: TestClient, db
     assert all("travel island" not in result["content"] for result in results)
 
 
-def test_chat_returns_answer_with_citations(client: TestClient, db_session: Session) -> None:
+def test_chat_uses_chat_model_and_returns_citations(client: TestClient, db_session: Session, monkeypatch) -> None:
+    from app.services import search as search_service
+
+    captured_messages: list[dict[str, str]] = []
+
+    class FakeChatModel:
+        def complete(self, messages: Sequence[dict[str, str]]) -> str:
+            captured_messages.extend(messages)
+            return "模型基于知识库片段回答 [1]"
+
+    monkeypatch.setattr(search_service, "get_chat_model", lambda: FakeChatModel())
     token = register_and_login(client, "chat@example.com")
     document = ingest_document(client, token, db_session, "personal radar answer citation context " * 20)
 
@@ -69,9 +81,12 @@ def test_chat_returns_answer_with_citations(client: TestClient, db_session: Sess
 
     assert response.status_code == 200, response.text
     body = response.json()
-    assert "根据你的知识库" in body["answer"]
-    assert "只基于当前检索到" in body["answer"]
-    assert "引用文档" in body["answer"]
+    assert body["answer"] == "模型基于知识库片段回答 [1]"
+    assert captured_messages
+    assert captured_messages[0]["role"] == "system"
+    assert "只能基于用户提供的知识库片段回答" in captured_messages[0]["content"]
+    assert "What context is available?" in captured_messages[-1]["content"]
+    assert "personal radar answer citation context" in captured_messages[-1]["content"]
     assert body["citations"]
     assert body["citations"][0]["document_id"] == document["id"]
 

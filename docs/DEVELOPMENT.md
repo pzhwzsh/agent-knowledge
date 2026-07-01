@@ -164,7 +164,8 @@
 - 对问题生成 embedding。
 - 只检索当前用户自己的 chunks。
 - PostgreSQL 使用 pgvector 数据库侧 cosine distance 排序；SQLite 测试环境回退到 Python 侧余弦相似度排序。
-- 问答返回 citations。
+- 问答会先检索当前用户私有 chunks，再把片段作为上下文传给 `ChatModel` 生成答案。
+- 问答返回 citations，便于回到原文档核对。
 - 没有上下文时明确回答不知道。
 
 ### 推荐流程
@@ -244,6 +245,18 @@
 - 前端 dashboard 快速采集已改为显示后台处理中状态，不再假设提交后立即生成 content。
 - 后端测试已覆盖队列提交、worker 处理、用户隔离、文档/推荐/搜索下游链路。
 
+### 第十一阶段：ChatModel RAG 接入
+
+本阶段已完成：
+
+- `SearchService.chat()` 不再直接拼接模板答案。
+- 问答流程会先检索当前用户私有 chunks，再构造带引用编号的 RAG prompt。
+- 通过 `get_chat_model()` 调用当前配置的 `ChatModel` 生成答案。
+- 继续保留 citations 和 related_documents，方便用户核对来源。
+- 测试已验证 ChatModel 会收到问题和检索片段。
+
+仍需继续：真实 provider 环境下的质量评估、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -275,7 +288,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：异步采集影响范围测试 `pytest app/tests/test_ingestions.py app/tests/test_documents_api.py app/tests/test_recommendations.py app/tests/test_search_chat.py app/tests/test_tasks.py` 为 25 passed；`ruff check app` passed。此前全量后端测试为 48 passed，前端 `npm run build` passed。
+最近通过结果：RAG/异步采集相关测试 `pytest app/tests/test_search_chat.py app/tests/test_ingestions.py app/tests/test_documents_api.py app/tests/test_recommendations.py app/tests/test_tasks.py` 已通过；`ruff check app` passed；前端 `npm run build` passed。此前全量后端测试为 48 passed。
 
 ## 外部分析核对与修补计划
 
@@ -286,7 +299,6 @@
 以下问题仍然成立，需要优先修补：
 
 - Mock 边界不够清楚：`GeneralAgent` 仍是规则/截断式摘要，`RecommenderAgent` 仍是规则评分，不是真正模型推荐。
-- Chat 仍不是真正 LLM RAG：当前 chat 是检索片段拼接模板，尚未调用 `ChatModel` 生成答案。
 - 测试环境与真实环境仍有差异：当前测试主要是 SQLite + mock LLM + `Base.metadata.create_all()`，不能证明 Docker Compose、PostgreSQL、pgvector、Celery worker、真实 LLM provider 全链路可用。
 - 安全收口还不完整：task health/schedule 当前未加认证；URL 抓取需要确认重定向后的地址也经过 SSRF 校验；前端 token 存 localStorage，登出只是本地删除 token。
 - 前端工程质量还需补强：API client 缺 timeout、AbortController、统一 401、全局 toast/loading/error boundary，React Query 依赖存在但未实际使用。
@@ -299,6 +311,7 @@
 以下说法在当前代码中已经部分或全部过期：
 
 - 搜索问答中文乱码：`SearchService.chat()` 已修复为正常中文。
+- Chat 模板拼接：`SearchService.chat()` 已改为检索后调用 `ChatModel` 生成答案，并继续返回 citations。
 - pgvector 数据库侧排序：已新增 PostgreSQL pgvector cosine distance 排序，SQLite 测试环境自动回退到 Python 余弦相似度。
 - 推送完全没完成：已实现站内推送日志、邮件/钉钉发送服务、`POST /api/push/daily`、`GET /api/push/logs`、每日推荐推送 Celery 任务；但生产模板、退订、频控和投递告警仍未完成。
 - 前端只有演示台：已拆为 `/dashboard`、`/documents`、`/recommendations`、`/search`、`/preferences` 多页面工作台；但交互状态和工程质量仍需要打磨。
@@ -306,7 +319,7 @@
 ### 修补优先级
 
 1. 文档口径修正：所有文档必须明确区分“真实能力 / mock 能力 / 占位能力 / 生产待办”。
-2. 真实 RAG：让 `SearchService.chat()` 调用 `ChatModel`，用检索片段构造 prompt，保留 citations。
+2. RAG 评估增强：补真实 provider 集成验证、答案质量评估、引用格式约束和失败降级策略。
 3. 真实总结和推荐：将规则 summary/recommender 标注为 mock 或替换为 LLM provider 实现。
 4. 集成验证：新增 Docker Compose/PostgreSQL/pgvector/Alembic/Celery 的最小集成验证脚本。
 5. 安全收口：task 监控接口加认证或管理员保护；URL 重定向后再次校验；梳理 token 存储和登出策略。
