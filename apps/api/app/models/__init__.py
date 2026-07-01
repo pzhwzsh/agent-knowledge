@@ -1,5 +1,6 @@
 from app.models.content import Content, Source
 from app.models.document import Document, DocumentChunk
+from app.models.feedback import UserFeedback
 from app.models.job import AgentRun, IngestionJob
 from app.models.logs import AuditLog, PushLog
 from app.models.preference import UserPreference
@@ -17,5 +18,6 @@ __all__ = [
     "Recommendation",
     "Source",
     "User",
+    "UserFeedback",
     "UserPreference",
 ]

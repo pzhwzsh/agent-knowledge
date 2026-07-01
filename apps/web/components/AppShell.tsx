@@ -10,6 +10,7 @@ const navItems = [
   { href: "/recommendations", label: "推荐" },
   { href: "/search", label: "搜索问答" },
   { href: "/preferences", label: "偏好" },
+  { href: "/feedback", label: "反馈维修" },
 ];
 
 export function AppShell({ children, user, onSignOut }: { children: ReactNode; user: User | null; onSignOut: () => void }) {

@@ -53,10 +53,11 @@
 - 任务运维第一批：支持单个 failed ingestion job 人工重放。
 - 推送控制第一批：支持禁用推送通道和当日成功推送频控。
 - 前端工程化第一批：API timeout、AbortController、统一 ApiError、401 登录过期处理。
+- 使用反馈闭环第一批：后端反馈 API、前端反馈维修台和用户隔离测试。
 - 生产可复现第一批：前端依赖锁定，新增生产 compose override。
 - 推荐模型化第一批：`RecommenderAgent` 接入 `ChatModel` 结构化推荐决策，保留规则 fallback。
 
-二期第一批不等于完整生产商业化版本。以下内容归入三期或生产化专项：浏览器插件、视频字幕总结、管理后台、token 成本统计、Rerank、多模型路由、文档导出、周报月报、批量任务运维、投递告警、审计日志完整落库、真实 provider 质量评估和 CI/CD。
+二期第一批不等于完整生产商业化版本。使用反馈闭环已可记录后续需要维修或删除的功能。以下内容归入三期或生产化专项：浏览器插件、视频字幕总结、管理后台、token 成本统计、Rerank、多模型路由、文档导出、周报月报、批量任务运维、投递告警、审计日志完整落库、真实 provider 质量评估和 CI/CD。
 
 ## 已完成内容
 
@@ -431,6 +432,19 @@
 - 前端 `npm run build` 已通过。
 
 仍需继续：documents/search/preferences 页面迁移、全局 toast、error boundary、页面 skeleton 和前端自动化测试。
+
+### 第二十五阶段：使用反馈闭环第一批
+
+本阶段已完成：
+
+- 新增 `user_feedback` 私有表和 Alembic migration。
+- 新增 `POST /api/feedback` 和 `GET /api/feedback`，只按当前用户读写。
+- 反馈字段包含 feature、feedback_type、severity、message、status 和 metadata。
+- 前端新增 `/feedback` 反馈维修台，并加入侧边栏导航。
+- 反馈用于记录实际使用中要修、要删、出错或想增强的功能，为后续调试/维修/删减提供清单。
+- 已补充反馈提交、列表和用户隔离测试。
+
+仍需继续：管理员查看/处理反馈、反馈状态流转、按反馈生成维修计划、与审计/任务系统联动。
 
 ## 未完成内容
 

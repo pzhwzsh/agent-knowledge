@@ -85,6 +85,20 @@ export type ChatResponse = {
   related_documents: SearchResult[];
 };
 
+
+export type UserFeedback = {
+  id: string;
+  user_id: string;
+  feature: string;
+  feedback_type: "bug" | "repair" | "delete" | "idea" | "other";
+  severity: "low" | "medium" | "high" | "critical";
+  message: string;
+  status: string;
+  metadata_json: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Preference = {
   id: string;
   user_id: string;

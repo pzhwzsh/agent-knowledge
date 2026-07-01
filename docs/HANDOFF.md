@@ -6,7 +6,7 @@
 
 本项目是一个多用户 AI 知识库平台。当前后端已支持认证、偏好、内容提交、文档入库、搜索、带引用问答、推荐箱和 GitHub/RSS 发现；前端已接入后端认证、token 保存、仪表盘、文档、推荐箱、搜索问答、偏好设置和快速采集。
 
-当前状态：二期第一批已收口，项目具备更稳的安全、任务运维、推送控制、前端 API client、生产 compose 和模型辅助推荐能力。
+当前状态：二期第一批已收口，项目具备更稳的安全、任务运维、推送控制、前端 API client、生产 compose、模型辅助推荐和使用反馈闭环能力。
 
 当前主要缺口已经进入三期/生产化专项：
 
@@ -307,7 +307,7 @@ ruff check app
 - 生产：锁定前端依赖，新增 `docker-compose.prod.yml`。
 - 推荐：模型辅助推荐决策，保留规则 fallback。
 
-三期建议优先做 CI/CD、真实 provider 质量评估、React Query/toast/error boundary、审计日志、管理员权限模型和投递告警，再考虑浏览器插件、视频字幕和管理后台。
+三期建议优先做 CI/CD、真实 provider 质量评估、剩余页面 React Query/toast/error boundary、反馈处理后台、审计查询、管理员权限细分和投递告警，再考虑浏览器插件、视频字幕和管理后台。
 
 ## 当前风险修补队列
 
@@ -349,6 +349,7 @@ ruff check app
 - 已完成管理员权限和审计日志基础：`users.is_admin`、管理员依赖、task 监控管理员保护和审计写入。
 - 已完成推荐反馈加权第一批：saved/disliked/ignored 历史会影响后续相似推荐评分。
 - 已完成 React Query 工程化第一批：全局 QueryClientProvider，dashboard/recommendations 迁移到 query/mutation。
+- 已完成使用反馈闭环第一批：`/api/feedback`、`user_feedback` 表和前端 `/feedback` 反馈维修台。
 
 ### 已修补或部分过期
 
