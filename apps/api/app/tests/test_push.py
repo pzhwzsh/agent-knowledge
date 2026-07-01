@@ -115,3 +115,31 @@ def test_push_schedule_contains_daily_push() -> None:
 
     assert "push-daily-recommendations-for-active-users" in celery_app.conf.beat_schedule
 
+
+def test_disabled_push_channel_skips_and_records_log(db_session: Session) -> None:
+    user = create_user_with_recommendation(db_session, channel="disabled")
+
+    result = RecommendationPushService(db_session).push_daily_recommendations(user.id)
+    logs = PushLogRepository(db_session).list_for_user(user.id)
+
+    assert result["status"] == "skipped"
+    assert result["channel"] == "disabled"
+    assert "disabled" in result["message"]
+    assert len(logs) == 1
+    assert logs[0].status == "skipped"
+    assert logs[0].sent_at is None
+
+
+def test_daily_push_is_rate_limited_after_successful_send(db_session: Session) -> None:
+    user = create_user_with_recommendation(db_session)
+    service = RecommendationPushService(db_session)
+
+    first = service.push_daily_recommendations(user.id)
+    second = service.push_daily_recommendations(user.id)
+    logs = PushLogRepository(db_session).list_for_user(user.id)
+
+    assert first["status"] == "sent"
+    assert second["status"] == "skipped"
+    assert "Daily push limit" in second["message"]
+    assert len(logs) == 2
+    assert [log.status for log in logs] == ["skipped", "sent"]

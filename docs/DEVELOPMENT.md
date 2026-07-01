@@ -32,8 +32,8 @@
 二期建议在一期后端稳定后推进：
 
 - 更完整的任务监控告警、批量失败任务重放和生产运维面板。
-- 更完整的推送模板、退订、频控和投递告警。
-- 钉钉/邮件真实发送配置和生产投递监控。
+- 更完整的推送模板、带签名退订链接、可配置频控和投递告警。
+- 钉钉/邮件生产投递监控、失败告警和模板治理。
 - 视频字幕总结。
 - 浏览器插件。
 - 基于用户反馈的推荐权重学习。
@@ -235,6 +235,8 @@
 - `push_daily_recommendations_for_active_users` Celery Beat 批处理入口。
 - `in_app` 渠道会写入站内推送日志。
 - `email` 和 `dingtalk` 渠道支持真实发送，但需要配置 SMTP 或 webhook；配置缺失时会记录 skipped。
+- `push_channel=disabled` 时会跳过推送并记录日志。
+- 同一用户同一渠道当天已有 successful sent 日志时，会跳过重复推送并记录 skipped。
 
 ### 第十阶段：Ingestion 主链路异步化
 
@@ -307,14 +309,25 @@
 
 仍需继续：更完整的任务运维面板、批量重放、失败原因聚合、重放审计日志和管理员权限模型。
 
+### 第十六阶段：推送频控和禁用通道
+
+本阶段已完成：
+
+- `RecommendationPushService` 支持 `push_channel=disabled`，用于用户退订/禁用推荐推送。
+- 已基于 `push_logs` 增加同一用户同一渠道的当日成功推送频控。
+- 当天已经成功推送过时，后续触发会记录 skipped，避免重复打扰。
+- 已补充禁用通道和频控测试。
+
+仍需继续：邮件/钉钉模板打磨、带签名退订链接、投递失败告警、推送频控配置化和更完整的运营面板。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
 
 - 更完整的任务监控告警、批量失败任务重放和生产运维面板。
 - 每日定时发现。
-- 邮件真实发送需要 SMTP 配置；后续还需模板、退订、频控和投递告警。
-- 钉钉/邮件真实发送配置和生产投递监控。
+- 邮件真实发送需要 SMTP 配置；后续还需模板、带签名退订链接、可配置频控和投递告警。
+- 钉钉/邮件生产投递监控、失败告警和模板治理。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 - 真实 GitHub API 集成。
 - 视频/PDF 完整解析。
@@ -338,7 +351,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：二期安全和任务运维相关测试 `pytest app/tests/test_tasks.py app/tests/test_ingestions.py app/tests/test_web_collector.py app/tests/test_auth_preferences.py` 已通过；`ruff check app` passed。此前 summary/RAG/异步采集相关测试通过，前端 `npm run build` passed，全量后端测试为 48 passed。
+最近通过结果：二期安全、任务运维和推送控制相关测试已通过；`ruff check app` passed。此前 summary/RAG/异步采集相关测试通过，前端 `npm run build` passed，全量后端测试为 48 passed。
 
 ## 外部分析核对与修补计划
 
@@ -364,7 +377,7 @@
 - Chat 模板拼接：`SearchService.chat()` 已改为检索后调用 `ChatModel` 生成答案，并继续返回 citations。
 - Summary mock：`GeneralAgent`、`GitHubAgent`、`LifestyleAgent` 已改为调用 `ChatModel` 生成结构化 JSON，保留 fallback。
 - pgvector 数据库侧排序：已新增 PostgreSQL pgvector cosine distance 排序，SQLite 测试环境自动回退到 Python 余弦相似度。
-- 推送完全没完成：已实现站内推送日志、邮件/钉钉发送服务、`POST /api/push/daily`、`GET /api/push/logs`、每日推荐推送 Celery 任务；但生产模板、退订、频控和投递告警仍未完成。
+- 推送完全没完成：该说法已过期；已实现站内推送日志、邮件/钉钉发送服务、`POST /api/push/daily`、`GET /api/push/logs`、每日推荐推送 Celery 任务、禁用通道和当日成功推送频控；但生产模板、带签名退订链接、可配置频控和投递告警仍未完成。
 - 前端只有演示台：已拆为 `/dashboard`、`/documents`、`/recommendations`、`/search`、`/preferences` 多页面工作台；但交互状态和工程质量仍需要打磨。
 
 ### 修补优先级

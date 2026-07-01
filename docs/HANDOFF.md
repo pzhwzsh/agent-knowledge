@@ -9,7 +9,7 @@
 当前主要缺口：
 
 - 更完整的任务监控告警、批量失败任务重放和生产运维面板。
-- 更完整的推送模板、退订、频控和投递告警。
+- 更完整的推送模板、带签名退订链接、可配置频控和投递告警。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 
 ## 目录结构
@@ -220,7 +220,9 @@ PowerShell 激活虚拟环境：
 2. 根据 `push_channel` 选择站内、邮件或钉钉。
 3. 站内渠道只写 `push_logs`。
 4. 邮件和钉钉需要 SMTP 或 webhook 配置，缺失时记录 skipped，不会误发。
-5. Celery Beat 会批量为活跃用户触发每日推荐推送。
+5. `push_channel=disabled` 会跳过推送并记录日志。
+6. 同一用户同一渠道当天已有 successful sent 时，后续触发会被频控跳过。
+7. Celery Beat 会批量为活跃用户触发每日推荐推送。
 
 ## 安全规则
 
@@ -274,7 +276,7 @@ pytest
 ruff check app
 ```
 
-最近结果：二期安全和任务运维相关测试通过，`ruff check app` passed；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed，前端 `npm run build` passed。
+最近结果：二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed，前端 `npm run build` passed。
 
 ## 已知风险
 
@@ -316,12 +318,13 @@ ruff check app
 - 已新增 Docker Compose smoke 脚本，覆盖 Alembic、API、worker、beat 和异步 ingestion 最小链路。
 - 已完成二期安全收口第一批：任务监控接口要求登录，URL 重定向后的最终地址再次经过 SSRF 校验。
 - 已新增单个 failed ingestion job 重放接口，覆盖成功、冲突和用户隔离测试。
+- 已完成推送控制第一批：支持禁用推送通道和基于 push log 的当日成功推送频控。
 
 ### 已修补或部分过期
 
 - 搜索中文乱码已修复。
 - pgvector 数据库侧排序已实现，并保留 SQLite 回退。
-- 推送基础能力已实现，但生产模板、退订、频控、投递告警仍未完成。
+- 推送基础能力、禁用通道和当日成功推送频控已实现；生产模板、带签名退订链接、可配置频控和投递告警仍未完成。
 - 前端已不是单一占位页，已有多页面工作台，但工程体验还需打磨。
 
 ### 建议下一步顺序
@@ -336,7 +339,7 @@ ruff check app
 ## 建议下一步
 
 1. 完成更完整的任务监控告警、批量失败任务重放和生产运维面板。
-2. 增强推送模板、退订、频控、投递告警和带签名的操作链接。
+2. 增强推送模板、带签名退订链接、可配置频控、投递告警和操作链接。
 3. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
 4. 做 pgvector 召回评估、参数调优和 rerank。
 5. 增加 Docker Compose 端到端验证。

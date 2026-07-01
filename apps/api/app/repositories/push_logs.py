@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, time
 from typing import Any
 from uuid import UUID
 
@@ -33,6 +33,16 @@ class PushLogRepository:
         self.db.add(log)
         self.db.flush()
         return log
+
+    def has_sent_today(self, user_id: UUID, *, channel: str) -> bool:
+        start_of_day = datetime.combine(datetime.now(UTC).date(), time.min, tzinfo=UTC)
+        statement = select(PushLog.id).where(
+            PushLog.user_id == user_id,
+            PushLog.channel == channel,
+            PushLog.status == "sent",
+            PushLog.sent_at >= start_of_day,
+        )
+        return self.db.scalar(statement) is not None
 
     def list_for_user(self, user_id: UUID, *, limit: int = 50, offset: int = 0) -> list[PushLog]:
         statement = (

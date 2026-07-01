@@ -30,6 +30,12 @@ class RecommendationPushService:
         if preference is None:
             return self._record(user_id, "in_app", "skipped", "User preference not found.", [])
 
+        if preference.push_channel == "disabled":
+            return self._record(user_id, "disabled", "skipped", "User has disabled recommendation pushes.", [])
+
+        if self.push_logs.has_sent_today(user_id, channel=preference.push_channel):
+            return self._record(user_id, preference.push_channel, "skipped", "Daily push limit already reached for this channel.", [])
+
         recommendations = self.recommendations.list_pending_for_push(user_id, limit=preference.daily_limit)
         if not recommendations:
             return self._record(user_id, preference.push_channel, "skipped", "No pending recommendations.", [])
