@@ -322,7 +322,7 @@ ruff check app
 ### 已确认仍需修补
 
 - `RecommenderAgent` 已接入模型辅助决策并保留规则 fallback；仍缺真实 provider 评估、用户反馈学习和个性化权重。
-- 已新增 Docker Compose smoke 脚本，但还没接入 CI，也缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
+- Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已要求登录；后续还需管理员权限模型。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 存 localStorage，logout 只是本地清除 token；后续需要 token 黑名单或服务端会话撤销策略。
@@ -337,7 +337,7 @@ ruff check app
 - `SearchService.chat()` 已从模板拼接改为检索后调用 `ChatModel` 生成答案，并继续返回 citations；已补模型失败降级、上下文截断和 prompt 注入防护提示。
 - `GeneralAgent`、`GitHubAgent`、`LifestyleAgent` 已从规则/固定摘要改为调用 `ChatModel` 生成结构化 JSON，并保留 fallback。
 - 已更新受影响后端测试，覆盖异步提交、worker 处理、下游文档/推荐/搜索链路、RAG prompt 和 summary fallback。
-- 已新增 Docker Compose smoke 脚本，覆盖 Alembic、API、worker、beat 和异步 ingestion 最小链路。
+- 已新增 Docker Compose smoke 脚本，覆盖 Alembic、API、worker、beat、pgvector extension、带认证 task 监控接口和异步 ingestion 最小链路。
 - 已完成二期安全收口第一批：任务监控接口要求登录，URL 重定向后的最终地址再次经过 SSRF 校验。
 - 已新增单个 failed ingestion job 重放接口，覆盖成功、冲突和用户隔离测试。
 - 已完成推送控制第一批：支持禁用推送通道和基于 push log 的当日成功推送频控。
@@ -345,6 +345,7 @@ ruff check app
 - 已完成生产可复现第一批：前端依赖锁定，新增 `docker-compose.prod.yml`，web 生产模式使用 build + start。
 - 已完成推荐模型化第一批：`RecommenderAgent` 调用 `ChatModel` 输出结构化推荐决策，并保留规则 fallback。
 - 已完成 RAG 生产质量增强第一批：模型失败降级、上下文截断和 prompt 注入防护提示。
+- 已完成 Docker smoke 增强第一批：task 认证适配、pgvector extension 断言和失败日志收集。
 
 ### 已修补或部分过期
 
@@ -358,7 +359,7 @@ ruff check app
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性评估、召回评估、rerank 和人工反馈调优。
 3. 推荐质量增强：真实 provider 评估、用户反馈学习、个性化权重和去重排序策略。
-4. 增强 Docker Compose 集成验证：接入 CI、补 pgvector SQL 查询、真实 provider 可选验证和失败日志收集。
+4. 增强 Docker Compose 集成验证：接入 CI、真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全加固增强：管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 6. 前端工程化增强：React Query、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
 

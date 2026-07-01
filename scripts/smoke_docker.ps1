@@ -31,6 +31,27 @@ function Invoke-JsonRequest {
     return Invoke-RestMethod @params
 }
 
+function Write-DockerDiagnostics {
+    Write-Step "collecting docker diagnostics"
+    & docker compose ps
+    & docker compose logs --no-color --tail=120 api worker beat postgres redis
+}
+
+function Invoke-SmokeStep {
+    param(
+        [string]$Description,
+        [scriptblock]$Action
+    )
+
+    try {
+        Write-Step $Description
+        return & $Action
+    } catch {
+        Write-DockerDiagnostics
+        throw
+    }
+}
+
 function Wait-Until {
     param(
         [scriptblock]$Probe,
@@ -85,11 +106,12 @@ Wait-Until -Description "API /health" -TimeoutSeconds $TimeoutSeconds -Probe {
 Write-Step "running Alembic migrations"
 & docker compose exec -T api alembic upgrade head
 
-Write-Step "checking task schedule endpoint"
-$schedule = Invoke-RestMethod -Method Get -Uri "http://localhost:8000/api/tasks/schedule"
-if (-not $schedule.beat_schedule -or $schedule.beat_schedule.Count -lt 1) {
-    throw "Task schedule endpoint returned no beat schedules"
-}
+Invoke-SmokeStep "checking pgvector extension" {
+    $pgvector = & docker compose exec -T postgres psql -U postgres -d personal_knowledge_radar -tAc "SELECT extname FROM pg_extension WHERE extname = 'vector';"
+    if ($pgvector.Trim() -ne "vector") {
+        throw "pgvector extension is not installed in the target database"
+    }
+} | Out-Null
 
 Write-Step "registering smoke user"
 $email = "smoke+$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())@example.com"
@@ -98,16 +120,25 @@ Invoke-JsonRequest -Method Post -Uri "http://localhost:8000/api/auth/register" -
 $tokenResponse = Invoke-JsonRequest -Method Post -Uri "http://localhost:8000/api/auth/login" -Body @{ email = $email; password = $password }
 $headers = @{ Authorization = "Bearer $($tokenResponse.access_token)" }
 
-Write-Step "submitting asynchronous ingestion job"
-$queued = Invoke-JsonRequest -Method Post -Uri "http://localhost:8000/api/ingestions" -Headers $headers -Body @{
-    input_type = "text"
-    input_value = "Docker smoke test content for personal knowledge radar, celery worker, and structured summary."
-}
-if ($queued.job.status -ne "pending" -and $queued.job.status -ne "failed") {
-    throw "Unexpected initial ingestion status: $($queued.job.status)"
-}
-if ($queued.job.status -eq "failed") {
-    throw "Ingestion failed to enqueue: $($queued.job.error_message)"
+Invoke-SmokeStep "checking authenticated task schedule endpoint" {
+    $schedule = Invoke-RestMethod -Method Get -Uri "http://localhost:8000/api/tasks/schedule" -Headers $headers
+    if (-not $schedule.beat_schedule -or $schedule.beat_schedule.Count -lt 1) {
+        throw "Task schedule endpoint returned no beat schedules"
+    }
+} | Out-Null
+
+$queued = Invoke-SmokeStep "submitting asynchronous ingestion job" {
+    $created = Invoke-JsonRequest -Method Post -Uri "http://localhost:8000/api/ingestions" -Headers $headers -Body @{
+        input_type = "text"
+        input_value = "Docker smoke test content for personal knowledge radar, celery worker, and structured summary."
+    }
+    if ($created.job.status -ne "pending" -and $created.job.status -ne "failed") {
+        throw "Unexpected initial ingestion status: $($created.job.status)"
+    }
+    if ($created.job.status -eq "failed") {
+        throw "Ingestion failed to enqueue: $($created.job.error_message)"
+    }
+    return $created
 }
 
 Write-Step "polling ingestion job"
@@ -123,10 +154,11 @@ if ($job.status -ne "success") {
     throw "Ingestion job did not succeed: $($job.error_message)"
 }
 
-Write-Step "checking task worker health"
-$taskHealth = Invoke-RestMethod -Method Get -Uri "http://localhost:8000/api/tasks/health"
-if ($taskHealth.workers_online -lt 1) {
-    throw "No Celery workers online"
-}
+Invoke-SmokeStep "checking authenticated task worker health" {
+    $taskHealth = Invoke-RestMethod -Method Get -Uri "http://localhost:8000/api/tasks/health" -Headers $headers
+    if ($taskHealth.workers_online -lt 1) {
+        throw "No Celery workers online"
+    }
+} | Out-Null
 
 Write-Step "smoke test passed"

@@ -295,12 +295,12 @@
 
 - 新增 `scripts/smoke_docker.ps1`。
 - 脚本会启动 PostgreSQL、Redis、API、worker、beat。
-- 脚本会等待 `/health`，执行 `alembic upgrade head`，检查 `/api/tasks/schedule`。
+- 脚本会等待 `/health`，执行 `alembic upgrade head`，检查 pgvector extension，并用登录 token 检查 `/api/tasks/schedule`。
 - 脚本会注册测试用户、登录、提交异步 ingestion job，并轮询 job 到 success。
-- 脚本会检查 `/api/tasks/health` 至少有一个 worker 在线。
+- 脚本会用登录 token 检查 `/api/tasks/health` 至少有一个 worker 在线。
 - 提供 `-ValidateOnly` 模式用于只做脚本解析检查，不启动 Docker。
 
-仍需继续：把该 smoke test 接入 CI，增加 pgvector SQL 查询断言、真实 provider 可选验证、失败日志收集和清理策略。
+仍需继续：把该 smoke test 接入 CI，增加真实 provider 可选验证和更完整清理策略。
 
 ### 第十四阶段：安全收口第一批
 
@@ -382,6 +382,17 @@
 
 仍需继续：真实 provider 质量评估、引用编号稳定性评估、召回评估、rerank 和人工测试反馈调优。
 
+### 第二十一阶段：Docker Smoke 增强第一批
+
+本阶段已完成：
+
+- `scripts/smoke_docker.ps1` 已适配 `/api/tasks/schedule` 和 `/api/tasks/health` 的认证要求。
+- smoke 会断言目标数据库已安装 pgvector extension。
+- smoke 失败时会输出 `docker compose ps` 和 api/worker/beat/postgres/redis 最近日志，方便定位。
+- `scripts/smoke_docker.ps1 -ValidateOnly` 已通过。
+
+仍需继续：接入 CI、真实 provider 可选验证、完整清理策略和更细的失败产物归档。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -424,7 +435,7 @@
 以下问题仍然成立，需要优先修补：
 
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback；仍缺真实 provider 评估、用户反馈学习和个性化权重。
-- 集成验证仍需增强：已新增 Docker Compose smoke 脚本，但尚未接入 CI，也还缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
+- 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已要求登录，URL 重定向后 SSRF 已复查并加测试；仍缺管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 - 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
@@ -447,7 +458,7 @@
 1. 文档口径修正：所有文档必须明确区分“真实能力 / mock 能力 / 占位能力 / 生产待办”。
 2. RAG 评估增强：补真实 provider 集成验证、答案质量评估、引用编号稳定性评估、召回评估和 rerank。
 3. 推荐质量增强：补真实 provider 推荐评估、用户反馈学习、个性化权重和去重排序策略。
-4. 集成验证增强：将 Docker smoke test 接入 CI，补 pgvector SQL 断言、真实 provider 可选验证和失败日志收集。
+4. 集成验证增强：将 Docker smoke test 接入 CI，补真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全收口增强：增加管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 6. 前端工程化增强：实际接入 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 7. 生产可复现增强：处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。

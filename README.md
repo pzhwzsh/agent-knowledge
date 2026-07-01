@@ -92,7 +92,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
 
 ## 集成验证
 
-本地 Docker 环境可运行最小 smoke test，用来验证 PostgreSQL/pgvector、Redis、API、Celery worker、Celery Beat、Alembic 和异步采集链路：
+本地 Docker 环境可运行最小 smoke test，用来验证 PostgreSQL/pgvector、Redis、API、Celery worker、Celery Beat、Alembic、带认证的 task 监控接口和异步采集链路；失败时会收集核心服务日志：
 
 ```powershell
 .\scripts\smoke_docker.ps1
