@@ -80,6 +80,20 @@ docker compose exec api alembic upgrade head
 ```
 
 
+## 集成验证
+
+本地 Docker 环境可运行最小 smoke test，用来验证 PostgreSQL/pgvector、Redis、API、Celery worker、Celery Beat、Alembic 和异步采集链路：
+
+```powershell
+.\scripts\smoke_docker.ps1
+```
+
+只检查脚本是否能被 PowerShell 解析，不启动 Docker：
+
+```powershell
+.\scripts\smoke_docker.ps1 -ValidateOnly
+```
+
 ## 主要 API
 
 认证：

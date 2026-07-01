@@ -269,6 +269,19 @@
 
 仍需继续：真实 provider 下的摘要质量评估、prompt 注入防护、token 长度控制、更稳定的输出格式约束，以及 `RecommenderAgent` 模型化。
 
+### 第十三阶段：Docker Compose 最小集成验证脚本
+
+本阶段已完成：
+
+- 新增 `scripts/smoke_docker.ps1`。
+- 脚本会启动 PostgreSQL、Redis、API、worker、beat。
+- 脚本会等待 `/health`，执行 `alembic upgrade head`，检查 `/api/tasks/schedule`。
+- 脚本会注册测试用户、登录、提交异步 ingestion job，并轮询 job 到 success。
+- 脚本会检查 `/api/tasks/health` 至少有一个 worker 在线。
+- 提供 `-ValidateOnly` 模式用于只做脚本解析检查，不启动 Docker。
+
+仍需继续：把该 smoke test 接入 CI，增加 pgvector SQL 查询断言、真实 provider 可选验证、失败日志收集和清理策略。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -300,7 +313,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：RAG/异步采集相关测试 `pytest app/tests/test_search_chat.py app/tests/test_ingestions.py app/tests/test_documents_api.py app/tests/test_recommendations.py app/tests/test_tasks.py` 已通过；`ruff check app` passed；前端 `npm run build` passed。此前全量后端测试为 48 passed。
+最近通过结果：summary/RAG/异步采集相关测试已通过；`ruff check app` passed；`scripts/smoke_docker.ps1 -ValidateOnly` passed；前端 `npm run build` passed。此前全量后端测试为 48 passed。
 
 ## 外部分析核对与修补计划
 
@@ -311,7 +324,7 @@
 以下问题仍然成立，需要优先修补：
 
 - 推荐边界仍需收口：`RecommenderAgent` 仍是规则评分，不是真正模型推荐或学习型推荐。
-- 测试环境与真实环境仍有差异：当前测试主要是 SQLite + mock LLM + `Base.metadata.create_all()`，不能证明 Docker Compose、PostgreSQL、pgvector、Celery worker、真实 LLM provider 全链路可用。
+- 集成验证仍需增强：已新增 Docker Compose smoke 脚本，但尚未接入 CI，也还缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
 - 安全收口还不完整：task health/schedule 当前未加认证；URL 抓取需要确认重定向后的地址也经过 SSRF 校验；前端 token 存 localStorage，登出只是本地删除 token。
 - 前端工程质量还需补强：API client 缺 timeout、AbortController、统一 401、全局 toast/loading/error boundary，React Query 依赖存在但未实际使用。
 - 生产部署仍偏开发态：前端依赖使用 `latest`，Docker Compose 中 web 使用 dev server，不是生产构建运行方式。
@@ -334,7 +347,7 @@
 1. 文档口径修正：所有文档必须明确区分“真实能力 / mock 能力 / 占位能力 / 生产待办”。
 2. RAG 评估增强：补真实 provider 集成验证、答案质量评估、引用格式约束和失败降级策略。
 3. 真实推荐：将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
-4. 集成验证：新增 Docker Compose/PostgreSQL/pgvector/Alembic/Celery 的最小集成验证脚本。
+4. 集成验证增强：将 Docker smoke test 接入 CI，补 pgvector SQL 断言、真实 provider 可选验证和失败日志收集。
 5. 安全收口：task 监控接口加认证或管理员保护；URL 重定向后再次校验；梳理 token 存储和登出策略。
 6. 前端工程化：模块化 API client，补 timeout、统一 401、toast/loading/error boundary，并实际使用 React Query。
 7. 生产可复现：锁定前端依赖版本，增加生产 web 启动方式。

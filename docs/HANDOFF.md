@@ -230,6 +230,28 @@ PowerShell 激活虚拟环境：
 - URL 抓取必须使用 SSRF 防护。
 - 推荐保存和文档入库必须保持幂等。
 
+## 集成验证
+
+新增 `scripts/smoke_docker.ps1` 用于本地 Docker Compose 最小链路验证：
+
+- 启动 PostgreSQL、Redis、API、worker、beat。
+- 执行 Alembic migration。
+- 检查 API `/health`、任务 schedule 和 worker health。
+- 注册/登录 smoke 用户。
+- 提交异步 ingestion job，并轮询到 success。
+
+只验证脚本语法：
+
+```powershell
+.\scripts\smoke_docker.ps1 -ValidateOnly
+```
+
+完整 smoke：
+
+```powershell
+.\scripts\smoke_docker.ps1
+```
+
 ## 测试
 
 测试文件：
@@ -251,7 +273,7 @@ pytest
 ruff check app
 ```
 
-最近结果：RAG/异步采集相关测试通过，`ruff check app` passed；此前全量后端测试 48 passed，前端 `npm run build` passed。
+最近结果：summary/RAG/异步采集相关测试通过，`ruff check app` passed，`scripts/smoke_docker.ps1 -ValidateOnly` passed；此前全量后端测试 48 passed，前端 `npm run build` passed。
 
 ## 已知风险
 
@@ -275,7 +297,7 @@ ruff check app
 ### 已确认仍需修补
 
 - `RecommenderAgent` 是规则评分，不是真模型推荐或学习型推荐。
-- SQLite + mock LLM 单元测试不能替代 PostgreSQL/pgvector/Celery/真实 provider 集成验证。
+- 已新增 Docker Compose smoke 脚本，但还没接入 CI，也缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
 - `/api/tasks/health` 和 `/api/tasks/schedule` 当前未加认证或管理员保护。
 - URL 抓取要确认重定向后的最终 URL 也经过 SSRF 校验。
 - 前端 token 存 localStorage，logout 只是本地清除 token。
@@ -290,6 +312,7 @@ ruff check app
 - `SearchService.chat()` 已从模板拼接改为检索后调用 `ChatModel` 生成答案，并继续返回 citations。
 - `GeneralAgent`、`GitHubAgent`、`LifestyleAgent` 已从规则/固定摘要改为调用 `ChatModel` 生成结构化 JSON，并保留 fallback。
 - 已更新受影响后端测试，覆盖异步提交、worker 处理、下游文档/推荐/搜索链路、RAG prompt 和 summary fallback。
+- 已新增 Docker Compose smoke 脚本，覆盖 Alembic、API、worker、beat 和异步 ingestion 最小链路。
 
 ### 已修补或部分过期
 
@@ -303,7 +326,7 @@ ruff check app
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
 3. 将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
-4. 增加 Docker Compose 集成验证：Alembic upgrade、Postgres pgvector 查询、Celery worker/beat 投递、API smoke test。
+4. 增强 Docker Compose 集成验证：接入 CI、补 pgvector SQL 查询、真实 provider 可选验证和失败日志收集。
 5. 安全加固：task 接口认证、SSRF 重定向复查、token/登出策略。
 6. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
 
