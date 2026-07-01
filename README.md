@@ -79,6 +79,12 @@ docker compose up --build
 docker compose exec api alembic upgrade head
 ```
 
+生产模式启动（API 不开启 reload，web 使用 build + start）：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+```
+
 
 ## 集成验证
 

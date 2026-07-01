@@ -58,6 +58,12 @@ docker compose up --build
 docker compose exec api alembic upgrade head
 ```
 
+生产模式 Docker Compose：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+```
+
 后端本地开发：
 
 ```bash
@@ -276,7 +282,7 @@ pytest
 ruff check app
 ```
 
-最近结果：二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed，前端 `npm run build` passed；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed。
+最近结果：二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed，前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed。
 
 ## 已知风险
 
@@ -305,7 +311,7 @@ ruff check app
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 存 localStorage，logout 只是本地清除 token；后续需要 token 黑名单或服务端会话撤销策略。
 - 前端 API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、toast/loading/error boundary 和页面级 skeleton。
-- 前端依赖使用 `latest`，Docker Compose web 仍是 dev server，生产可复现性不足。
+- 前端依赖已锁定，已新增生产 compose override；仍需治理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
 
 ### 本轮已推进
@@ -320,6 +326,7 @@ ruff check app
 - 已新增单个 failed ingestion job 重放接口，覆盖成功、冲突和用户隔离测试。
 - 已完成推送控制第一批：支持禁用推送通道和基于 push log 的当日成功推送频控。
 - 已完成前端 API client 工程化第一批：默认超时、AbortController、统一 ApiError 和 401 登录过期事件。
+- 已完成生产可复现第一批：前端依赖锁定，新增 `docker-compose.prod.yml`，web 生产模式使用 build + start。
 
 ### 已修补或部分过期
 
