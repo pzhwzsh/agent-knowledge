@@ -103,31 +103,84 @@ type ApiErrorBody = {
 };
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+export const API_UNAUTHORIZED_EVENT = "personal-knowledge-radar:unauthorized";
+const DEFAULT_TIMEOUT_MS = 15000;
 
-export async function apiRequest<T>(path: string, options: RequestInit = {}, token?: string | null): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    let message = `请求失败：${response.status}`;
-    try {
-      const body = (await response.json()) as ApiErrorBody;
-      if (typeof body.detail === "string") message = body.detail;
-      if (Array.isArray(body.detail) && body.detail[0]?.msg) message = body.detail[0].msg;
-    } catch {
-      // Keep status message.
-    }
-    throw new Error(message);
+export class ApiError extends Error {
+  constructor(message: string, public status: number, public path: string) {
+    super(message);
+    this.name = "ApiError";
   }
+}
 
-  if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+type ApiRequestOptions = RequestInit & {
+  timeoutMs?: number;
+};
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}, token?: string | null): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const timeoutController = new AbortController();
+  const timeoutId = window.setTimeout(() => timeoutController.abort(), timeoutMs);
+  const signal = mergeAbortSignals(options.signal, timeoutController.signal);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const message = await readErrorMessage(response);
+      if (response.status === 401) dispatchUnauthorized();
+      throw new ApiError(message, response.status, path);
+    }
+
+    if (response.status === 204) return undefined as T;
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("请求超时，请稍后重试", 0, path);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+async function readErrorMessage(response: Response) {
+  let message = `请求失败：${response.status}`;
+  try {
+    const body = (await response.json()) as ApiErrorBody;
+    if (typeof body.detail === "string") message = body.detail;
+    if (Array.isArray(body.detail) && body.detail[0]?.msg) message = body.detail[0].msg;
+  } catch {
+    // Keep status message.
+  }
+  return message;
+}
+
+function dispatchUnauthorized() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(API_UNAUTHORIZED_EVENT));
+}
+
+function mergeAbortSignals(left?: AbortSignal | null, right?: AbortSignal | null) {
+  if (!left) return right ?? undefined;
+  if (!right) return left;
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (left.aborted || right.aborted) {
+    controller.abort();
+  } else {
+    left.addEventListener("abort", abort, { once: true });
+    right.addEventListener("abort", abort, { once: true });
+  }
+  return controller.signal;
 }
 
 export function isLikelyUrl(value: string) {

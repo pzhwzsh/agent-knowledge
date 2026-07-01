@@ -276,7 +276,7 @@ pytest
 ruff check app
 ```
 
-最近结果：二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed，前端 `npm run build` passed。
+最近结果：二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed，前端 `npm run build` passed；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed。
 
 ## 已知风险
 
@@ -284,7 +284,7 @@ ruff check app
 - Celery 核心任务入口、公开 ingestion 异步投递、Beat 定时调度和基础重试策略已完成，但生产级告警和人工重放还没完成。
 - GitHub Trending 解析依赖 GitHub HTML 结构，页面变化可能导致失效。
 - RSS parser 是基础实现，不能覆盖所有 feed 边界情况。
-- 前端已有多页面工作台，但加载、错误、401、全局状态和自动化测试仍偏弱。
+- 前端已有多页面工作台，API client 已补超时、AbortController 和 401 登录过期处理；React Query、全局 toast/loading/error boundary 和自动化测试仍偏弱。
 - 真实 LLM provider 接口已实现，但测试主要覆盖 mock 和 provider 解析逻辑。
 
 ## 当前风险修补队列
@@ -304,7 +304,7 @@ ruff check app
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已要求登录；后续还需管理员权限模型。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 存 localStorage，logout 只是本地清除 token；后续需要 token 黑名单或服务端会话撤销策略。
-- 前端 API client 仍缺 timeout、AbortController、统一 401、toast/loading/error boundary。
+- 前端 API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、toast/loading/error boundary 和页面级 skeleton。
 - 前端依赖使用 `latest`，Docker Compose web 仍是 dev server，生产可复现性不足。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
 
@@ -319,6 +319,7 @@ ruff check app
 - 已完成二期安全收口第一批：任务监控接口要求登录，URL 重定向后的最终地址再次经过 SSRF 校验。
 - 已新增单个 failed ingestion job 重放接口，覆盖成功、冲突和用户隔离测试。
 - 已完成推送控制第一批：支持禁用推送通道和基于 push log 的当日成功推送频控。
+- 已完成前端 API client 工程化第一批：默认超时、AbortController、统一 ApiError 和 401 登录过期事件。
 
 ### 已修补或部分过期
 
@@ -334,13 +335,13 @@ ruff check app
 3. 将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
 4. 增强 Docker Compose 集成验证：接入 CI、补 pgvector SQL 查询、真实 provider 可选验证和失败日志收集。
 5. 安全加固增强：管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
-6. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
+6. 前端工程化增强：React Query、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
 
 ## 建议下一步
 
 1. 完成更完整的任务监控告警、批量失败任务重放和生产运维面板。
 2. 增强推送模板、带签名退订链接、可配置频控、投递告警和操作链接。
-3. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
+3. 前端工程化：React Query、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
 4. 做 pgvector 召回评估、参数调优和 rerank。
 5. 增加 Docker Compose 端到端验证。
 

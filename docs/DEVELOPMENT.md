@@ -194,9 +194,10 @@
 - Next.js 前端已从占位页升级为多页面工作台，并接入后端 API。
 - 左侧是带雷达扫描效果的创意登录区，已接入 `/api/auth/register`、`/api/auth/login` 和 `/api/auth/me`。
 - 已实现 `/dashboard`、`/documents`、`/recommendations`、`/search`、`/preferences` 页面。
+- API client 已支持默认超时、AbortController 信号合并、统一 `ApiError` 和 401 登录过期事件。
 - 已适配 Tailwind CSS v4 的 PostCSS 插件配置。
 
-尚未完成：更细的加载/错误状态、完整业务细节页、前端自动化测试、生产级体验打磨。
+尚未完成：React Query 实际接入、全局 toast/loading/error boundary、完整业务细节页、前端自动化测试、生产级体验打磨。
 
 ### 后台任务
 
@@ -320,6 +321,19 @@
 
 仍需继续：邮件/钉钉模板打磨、带签名退订链接、投递失败告警、推送频控配置化和更完整的运营面板。
 
+### 第十七阶段：前端 API client 工程化第一批
+
+本阶段已完成：
+
+- `apiRequest()` 增加默认 15 秒超时。
+- 支持外部 `AbortSignal`，并与内部 timeout signal 合并。
+- 新增 `ApiError`，携带 HTTP status 和请求 path。
+- 401 响应会广播登录过期事件。
+- `useAuth()` 监听登录过期事件并清理本地 token 和 user 状态。
+- 前端 `npm run build` 已通过。
+
+仍需继续：React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton、前端自动化测试。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -351,7 +365,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：二期安全、任务运维和推送控制相关测试已通过；`ruff check app` passed。此前 summary/RAG/异步采集相关测试通过，前端 `npm run build` passed，全量后端测试为 48 passed。
+最近通过结果：二期安全、任务运维、推送控制相关测试已通过；`ruff check app` passed；前端 `npm run build` passed。此前 summary/RAG/异步采集相关测试通过，全量后端测试为 48 passed。
 
 ## 外部分析核对与修补计划
 
@@ -364,7 +378,7 @@
 - 推荐边界仍需收口：`RecommenderAgent` 仍是规则评分，不是真正模型推荐或学习型推荐。
 - 集成验证仍需增强：已新增 Docker Compose smoke 脚本，但尚未接入 CI，也还缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
 - 安全收口还需继续：task health/schedule 已要求登录，URL 重定向后 SSRF 已复查并加测试；仍缺管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
-- 前端工程质量还需补强：API client 缺 timeout、AbortController、统一 401、全局 toast/loading/error boundary，React Query 依赖存在但未实际使用。
+- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 - 生产部署仍偏开发态：前端依赖使用 `latest`，Docker Compose 中 web 使用 dev server，不是生产构建运行方式。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
 - AuditLog 仍是模型占位，尚未形成完整审计写入链路。
@@ -387,7 +401,7 @@
 3. 真实推荐：将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
 4. 集成验证增强：将 Docker smoke test 接入 CI，补 pgvector SQL 断言、真实 provider 可选验证和失败日志收集。
 5. 安全收口增强：增加管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
-6. 前端工程化：模块化 API client，补 timeout、统一 401、toast/loading/error boundary，并实际使用 React Query。
+6. 前端工程化增强：实际接入 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 7. 生产可复现：锁定前端依赖版本，增加生产 web 启动方式。
 
 ## 开发规则

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { apiRequest, User } from "./api";
+import { API_UNAUTHORIZED_EVENT, apiRequest, User } from "./api";
 
 export const TOKEN_STORAGE_KEY = "personal_knowledge_radar_token";
 
@@ -22,6 +22,17 @@ export function useAuth() {
   const [token, setTokenState] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      clearToken();
+      setTokenState(null);
+      setUser(null);
+    }
+
+    window.addEventListener(API_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(API_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, []);
 
   useEffect(() => {
     const saved = readStoredToken();
