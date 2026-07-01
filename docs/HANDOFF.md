@@ -6,11 +6,14 @@
 
 本项目是一个多用户 AI 知识库平台。当前后端已支持认证、偏好、内容提交、文档入库、搜索、带引用问答、推荐箱和 GitHub/RSS 发现；前端已接入后端认证、token 保存、仪表盘、文档、推荐箱、搜索问答、偏好设置和快速采集。
 
-当前主要缺口：
+当前状态：二期第一批已收口，项目具备更稳的安全、任务运维、推送控制、前端 API client、生产 compose 和模型辅助推荐能力。
+
+当前主要缺口已经进入三期/生产化专项：
 
 - 更完整的任务监控告警、批量失败任务重放和生产运维面板。
 - 更完整的推送模板、带签名退订链接、可配置频控和投递告警。
-- 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
+- React Query、全局 toast/loading/error boundary、前端自动化测试和生产级体验打磨。
+- 浏览器插件、视频字幕总结、管理后台、Rerank、多模型路由、文档导出、token 成本统计。
 
 ## 目录结构
 
@@ -282,7 +285,7 @@ pytest
 ruff check app
 ```
 
-最近结果：二期推荐模型化、summary、推荐 API 相关测试通过；二期安全、任务运维和推送控制相关测试通过，`ruff check app` passed，前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
+最近结果：后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 已知风险
 
@@ -292,6 +295,19 @@ ruff check app
 - RSS parser 是基础实现，不能覆盖所有 feed 边界情况。
 - 前端已有多页面工作台，API client 已补超时、AbortController 和 401 登录过期处理；React Query、全局 toast/loading/error boundary 和自动化测试仍偏弱。
 - 真实 LLM provider 接口已实现，但测试主要覆盖 mock 和 provider 解析逻辑。
+
+## 二期第一批交付结论
+
+二期第一批可以视为完成。本轮交付集中在一期 MVP 的稳定性和交付质量：
+
+- 安全：task 接口鉴权、重定向后 SSRF 校验。
+- 任务：failed ingestion job 单个重放。
+- 推送：禁用通道、当日成功推送频控。
+- 前端：API timeout、AbortController、统一 ApiError、401 登录过期处理。
+- 生产：锁定前端依赖，新增 `docker-compose.prod.yml`。
+- 推荐：模型辅助推荐决策，保留规则 fallback。
+
+三期建议优先做 CI/CD、真实 provider 质量评估、React Query/toast/error boundary、审计日志、管理员权限模型和投递告警，再考虑浏览器插件、视频字幕和管理后台。
 
 ## 当前风险修补队列
 

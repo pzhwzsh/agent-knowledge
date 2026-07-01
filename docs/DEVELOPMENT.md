@@ -45,6 +45,19 @@
 - token 成本统计。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 
+## 二期第一批收口状态
+
+二期第一批已完成，重点是把一期 MVP 的核心链路从“能跑”推进到“更接近可运维、可验证、可交付”：
+
+- 安全收口第一批：任务监控接口要求登录，URL 重定向后再次 SSRF 校验。
+- 任务运维第一批：支持单个 failed ingestion job 人工重放。
+- 推送控制第一批：支持禁用推送通道和当日成功推送频控。
+- 前端工程化第一批：API timeout、AbortController、统一 ApiError、401 登录过期处理。
+- 生产可复现第一批：前端依赖锁定，新增生产 compose override。
+- 推荐模型化第一批：`RecommenderAgent` 接入 `ChatModel` 结构化推荐决策，保留规则 fallback。
+
+二期第一批不等于完整生产商业化版本。以下内容归入三期或生产化专项：浏览器插件、视频字幕总结、管理后台、token 成本统计、Rerank、多模型路由、文档导出、周报月报、批量任务运维、投递告警、审计日志完整落库、真实 provider 质量评估和 CI/CD。
+
 ## 已完成内容
 
 ### 基础设施
@@ -387,7 +400,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：二期推荐模型化、summary、推荐 API 相关测试已通过；二期安全、任务运维、推送控制相关测试已通过；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
+最近通过结果：后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 外部分析核对与修补计划
 
