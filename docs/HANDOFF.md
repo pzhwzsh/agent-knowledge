@@ -12,7 +12,7 @@
 
 - 更完整的任务监控告警、批量失败任务重放和生产运维面板。
 - 更完整的推送模板、带签名退订链接、可配置频控和投递告警。
-- React Query、全局 toast/loading/error boundary、前端自动化测试和生产级体验打磨。
+- 其余页面 React Query 迁移、全局 toast/loading/error boundary、前端自动化测试和生产级体验打磨。
 - 浏览器插件、视频字幕总结、管理后台、Rerank、多模型路由、文档导出、token 成本统计。
 
 ## 目录结构
@@ -293,7 +293,7 @@ ruff check app
 - Celery 核心任务入口、公开 ingestion 异步投递、Beat 定时调度和基础重试策略已完成，但生产级告警和人工重放还没完成。
 - GitHub Trending 解析依赖 GitHub HTML 结构，页面变化可能导致失效。
 - RSS parser 是基础实现，不能覆盖所有 feed 边界情况。
-- 前端已有多页面工作台，API client 已补超时、AbortController 和 401 登录过期处理；React Query、全局 toast/loading/error boundary 和自动化测试仍偏弱。
+- 前端已有多页面工作台，API client 已补超时、AbortController 和 401 登录过期处理，React Query 已接入并迁移 dashboard/recommendations；其余页面、全局 toast/loading/error boundary 和自动化测试仍偏弱。
 - 真实 LLM provider 接口已实现，但测试主要覆盖 mock 和 provider 解析逻辑；RAG 已补模型失败降级、上下文截断和 prompt 注入防护提示。
 
 ## 二期第一批交付结论
@@ -326,7 +326,7 @@ ruff check app
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；后续还需管理员后台和审计查询 UI/API。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 存 localStorage，logout 只是本地清除 token；后续需要 token 黑名单或服务端会话撤销策略。
-- 前端 API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、toast/loading/error boundary 和页面级 skeleton。
+- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations；仍缺其余页面迁移、toast/loading/error boundary 和页面级 skeleton。
 - 前端依赖已锁定，已新增生产 compose override；仍需治理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
 
@@ -348,6 +348,7 @@ ruff check app
 - 已完成 Docker smoke 增强第一批：task 认证适配、pgvector extension 断言和失败日志收集。
 - 已完成管理员权限和审计日志基础：`users.is_admin`、管理员依赖、task 监控管理员保护和审计写入。
 - 已完成推荐反馈加权第一批：saved/disliked/ignored 历史会影响后续相似推荐评分。
+- 已完成 React Query 工程化第一批：全局 QueryClientProvider，dashboard/recommendations 迁移到 query/mutation。
 
 ### 已修补或部分过期
 
@@ -363,7 +364,7 @@ ruff check app
 3. 推荐质量增强：真实 provider 评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 增强 Docker Compose 集成验证：接入 CI、真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全加固增强：管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
-6. 前端工程化增强：React Query、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
+6. 前端工程化增强：剩余页面 React Query 迁移、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
 
 ## 建议下一步
 

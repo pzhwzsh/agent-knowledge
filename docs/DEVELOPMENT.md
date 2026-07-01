@@ -212,9 +212,10 @@
 - 左侧是带雷达扫描效果的创意登录区，已接入 `/api/auth/register`、`/api/auth/login` 和 `/api/auth/me`。
 - 已实现 `/dashboard`、`/documents`、`/recommendations`、`/search`、`/preferences` 页面。
 - API client 已支持默认超时、AbortController 信号合并、统一 `ApiError` 和 401 登录过期事件。
+- 已接入 React Query Provider，`/dashboard` 和 `/recommendations` 已迁移到 `useQuery`/`useMutation`。
 - 已适配 Tailwind CSS v4 的 PostCSS 插件配置。
 
-尚未完成：React Query 实际接入、全局 toast/loading/error boundary、完整业务细节页、前端自动化测试、生产级体验打磨。
+尚未完成：其余页面 React Query 迁移、全局 toast/loading/error boundary、完整业务细节页、前端自动化测试、生产级体验打磨。
 
 ### 后台任务
 
@@ -349,7 +350,7 @@
 - `useAuth()` 监听登录过期事件并清理本地 token 和 user 状态。
 - 前端 `npm run build` 已通过。
 
-仍需继续：React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton、前端自动化测试。
+仍需继续：其余页面 React Query 迁移、全局 toast/loading/error boundary、页面级 skeleton、前端自动化测试。
 
 ### 第十八阶段：生产 Web 启动和依赖锁定
 
@@ -419,6 +420,18 @@
 
 仍需继续：更完整的学习型推荐、时间衰减、反馈权重配置、重复内容去重、A/B 或人工质量评估。
 
+### 第二十四阶段：React Query 工程化第一批
+
+本阶段已完成：
+
+- 新增 `app/providers.tsx`，在根 layout 注入 `QueryClientProvider`。
+- 配置基础 query 默认值：`staleTime`、有限 retry、关闭 window focus 自动刷新。
+- `/dashboard` 使用 `useQuery` 聚合文档、推荐和采集任务，并用 mutation 提交采集后 invalidate。
+- `/recommendations` 使用 `useQuery` 加载推荐，用 mutation 处理 save/ignore/dislike 后 invalidate。
+- 前端 `npm run build` 已通过。
+
+仍需继续：documents/search/preferences 页面迁移、全局 toast、error boundary、页面 skeleton 和前端自动化测试。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -463,7 +476,7 @@
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试；仍缺管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
-- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
+- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations；仍缺其余页面迁移、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
 - AuditLog 仍是模型占位，尚未形成完整审计写入链路。
@@ -486,7 +499,7 @@
 3. 推荐质量增强：补真实 provider 推荐评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 集成验证增强：将 Docker smoke test 接入 CI，补真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全收口增强：增加管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
-6. 前端工程化增强：实际接入 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
+6. 前端工程化增强：迁移剩余页面到 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 7. 生产可复现增强：处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 
 ## 开发规则
