@@ -10,6 +10,14 @@ from app.services.ingestions import IngestionService
 from app.tasks import jobs
 
 
+def register_and_login_for_tasks(client, email: str = "tasks-auth@example.com") -> str:
+    response = client.post("/api/auth/register", json={"email": email, "password": "password123"})
+    assert response.status_code == 201, response.text
+    response = client.post("/api/auth/login", json={"email": email, "password": "password123"})
+    assert response.status_code == 200, response.text
+    return response.json()["access_token"]
+
+
 def create_user_and_job(db: Session) -> tuple[UUID, UUID]:
     from app.core.security import hash_password
     from app.models.user import User
@@ -133,8 +141,15 @@ def test_celery_beat_schedule_contains_core_jobs() -> None:
     assert "fetch-daily-sources-for-active-users" in celery_app.conf.beat_schedule
 
 
-def test_task_schedule_endpoint(client) -> None:
+def test_task_schedule_endpoint_requires_authentication(client) -> None:
     response = client.get("/api/tasks/schedule")
+
+    assert response.status_code == 401
+
+
+def test_task_schedule_endpoint(client) -> None:
+    token = register_and_login_for_tasks(client)
+    response = client.get("/api/tasks/schedule", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
     data = response.json()

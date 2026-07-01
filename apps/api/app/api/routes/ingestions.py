@@ -52,3 +52,24 @@ def get_ingestion(
     db: Session = Depends(get_db),
 ):
     return IngestionService(db).get_job(current_user.id, job_id)
+
+@router.post("/{job_id}/replay", response_model=IngestionQueueResponse, status_code=status.HTTP_202_ACCEPTED)
+def replay_ingestion(
+    job_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    service = IngestionService(db)
+    job = service.reset_failed_job_for_retry(current_user.id, job_id)
+    try:
+        async_result = process_ingestion_job.delay(str(current_user.id), str(job.id))
+    except Exception as exc:
+        job = service.mark_job_status(
+            current_user.id,
+            job.id,
+            JobStatus.FAILED,
+            error_message=f"Failed to enqueue ingestion replay: {exc}",
+        )
+        return IngestionQueueResponse(job=job, task_id=None)
+    return IngestionQueueResponse(job=job, task_id=async_result.id)
+

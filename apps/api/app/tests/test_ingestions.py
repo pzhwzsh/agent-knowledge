@@ -129,3 +129,58 @@ def test_private_url_fails_when_worker_processes_job(client: TestClient, db_sess
     assert job is not None
     assert job.status == "failed"
     assert job.error_message
+
+def test_failed_ingestion_job_can_be_replayed(client: TestClient, db_session: Session) -> None:
+    token = register_and_login(client, "replay@example.com")
+    queued = client.post(
+        "/api/ingestions",
+        headers=auth_header(token),
+        json={"input_type": "url", "input_value": "http://127.0.0.1/admin"},
+    )
+    assert queued.status_code == 202
+    with pytest.raises(HTTPException):
+        process_job(db_session, queued.json())
+
+    job_id = queued.json()["job"]["id"]
+    replay = client.post(f"/api/ingestions/{job_id}/replay", headers=auth_header(token))
+
+    assert replay.status_code == 202, replay.text
+    body = replay.json()
+    assert body["job"]["status"] == "pending"
+    assert body["job"]["retry_count"] == 1
+    assert body["job"]["error_message"] is None
+    assert body["job"]["finished_at"] is None
+    assert body["task_id"] == "test-task-id"
+
+
+def test_only_failed_ingestion_jobs_can_be_replayed(client: TestClient) -> None:
+    token = register_and_login(client, "replay-conflict@example.com")
+    queued = client.post(
+        "/api/ingestions",
+        headers=auth_header(token),
+        json={"input_type": "text", "input_value": "pending content"},
+    )
+    assert queued.status_code == 202
+
+    job_id = queued.json()["job"]["id"]
+    replay = client.post(f"/api/ingestions/{job_id}/replay", headers=auth_header(token))
+
+    assert replay.status_code == 409
+
+
+def test_ingestion_replay_is_isolated_by_current_user(client: TestClient, db_session: Session) -> None:
+    alice = register_and_login(client, "alice-replay@example.com")
+    bob = register_and_login(client, "bob-replay@example.com")
+    queued = client.post(
+        "/api/ingestions",
+        headers=auth_header(alice),
+        json={"input_type": "url", "input_value": "http://127.0.0.1/admin"},
+    )
+    assert queued.status_code == 202
+    with pytest.raises(HTTPException):
+        process_job(db_session, queued.json())
+
+    job_id = queued.json()["job"]["id"]
+    replay = client.post(f"/api/ingestions/{job_id}/replay", headers=auth_header(bob))
+
+    assert replay.status_code == 404

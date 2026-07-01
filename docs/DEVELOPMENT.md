@@ -31,7 +31,7 @@
 
 二期建议在一期后端稳定后推进：
 
-- 更完整的任务监控告警、失败任务人工重放和生产运维面板。
+- 更完整的任务监控告警、批量失败任务重放和生产运维面板。
 - 更完整的推送模板、退订、频控和投递告警。
 - 钉钉/邮件真实发送配置和生产投递监控。
 - 视频字幕总结。
@@ -121,6 +121,7 @@
 - `POST /api/ingestions`
 - `GET /api/ingestions`
 - `GET /api/ingestions/{id}`
+- `POST /api/ingestions/{id}/replay`
 
 已实现行为：
 
@@ -131,6 +132,7 @@
 - 使用 `httpx`、`trafilatura`、`BeautifulSoup` 提取网页正文。
 - 按 hash 或 canonical URL 去重。
 - 记录 ingestion job 的 pending/running/success/failed 状态。
+- 支持当前用户重放自己的 failed ingestion job，重放会清空错误、重置为 pending、retry_count 加 1 并重新投递 Celery。
 - RouterAgent 路由。
 - summary Agent 调用 `ChatModel` 生成结构化 JSON 摘要；模型输出异常时使用 fallback 基础摘要。
 - 记录 agent run。
@@ -206,7 +208,7 @@
 - `embed_document_chunks`：为已有文档 chunks 重新生成 embedding。
 - `cleanup_failed_jobs`：将超时的 running/retrying job 标记为 failed。
 
-这些任务复用现有 service，当前已覆盖测试。已配置 Celery Beat 定时调度、自动重试、worker 丢失拒收、prefetch 控制、每日推荐推送和基础任务监控接口。尚未完成更完整的告警、人工重放和生产运维面板。
+这些任务复用现有 service，当前已覆盖测试。已配置 Celery Beat 定时调度、自动重试、worker 丢失拒收、prefetch 控制、每日推荐推送和需要登录访问的基础任务监控接口。尚未完成更完整的告警、人工重放和生产运维面板。
 
 ### 外部发现
 
@@ -282,11 +284,34 @@
 
 仍需继续：把该 smoke test 接入 CI，增加 pgvector SQL 查询断言、真实 provider 可选验证、失败日志收集和清理策略。
 
+### 第十四阶段：安全收口第一批
+
+本阶段已完成：
+
+- `/api/tasks/health` 和 `/api/tasks/schedule` 已从公开接口改为需要登录访问。
+- 任务监控接口测试新增未登录 401 和登录可访问的覆盖。
+- `WebPageCollector` 会在请求完成后对 `response.url` 再次执行 SSRF 校验。
+- 新增测试覆盖“初始公网 URL 重定向到 localhost/内网地址时拒绝访问”。
+
+仍需继续：管理员角色/权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理、审计日志落库。
+
+### 第十五阶段：失败采集任务重放
+
+本阶段已完成：
+
+- 新增 `POST /api/ingestions/{id}/replay`。
+- 仅允许当前用户重放自己的 failed ingestion job。
+- 非 failed job 重放会返回 409。
+- 重放会清空 `error_message` 和 `finished_at`，状态改为 pending，`retry_count` 加 1，并重新投递 `process_ingestion_job`。
+- 已补充重放成功、非 failed 冲突和用户隔离测试。
+
+仍需继续：更完整的任务运维面板、批量重放、失败原因聚合、重放审计日志和管理员权限模型。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
 
-- 更完整的任务监控告警、失败任务人工重放和生产运维面板。
+- 更完整的任务监控告警、批量失败任务重放和生产运维面板。
 - 每日定时发现。
 - 邮件真实发送需要 SMTP 配置；后续还需模板、退订、频控和投递告警。
 - 钉钉/邮件真实发送配置和生产投递监控。
@@ -313,7 +338,7 @@
 - discovery。
 - tasks。
 
-最近通过结果：summary/RAG/异步采集相关测试已通过；`ruff check app` passed；`scripts/smoke_docker.ps1 -ValidateOnly` passed；前端 `npm run build` passed。此前全量后端测试为 48 passed。
+最近通过结果：二期安全和任务运维相关测试 `pytest app/tests/test_tasks.py app/tests/test_ingestions.py app/tests/test_web_collector.py app/tests/test_auth_preferences.py` 已通过；`ruff check app` passed。此前 summary/RAG/异步采集相关测试通过，前端 `npm run build` passed，全量后端测试为 48 passed。
 
 ## 外部分析核对与修补计划
 
@@ -325,7 +350,7 @@
 
 - 推荐边界仍需收口：`RecommenderAgent` 仍是规则评分，不是真正模型推荐或学习型推荐。
 - 集成验证仍需增强：已新增 Docker Compose smoke 脚本，但尚未接入 CI，也还缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
-- 安全收口还不完整：task health/schedule 当前未加认证；URL 抓取需要确认重定向后的地址也经过 SSRF 校验；前端 token 存 localStorage，登出只是本地删除 token。
+- 安全收口还需继续：task health/schedule 已要求登录，URL 重定向后 SSRF 已复查并加测试；仍缺管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 - 前端工程质量还需补强：API client 缺 timeout、AbortController、统一 401、全局 toast/loading/error boundary，React Query 依赖存在但未实际使用。
 - 生产部署仍偏开发态：前端依赖使用 `latest`，Docker Compose 中 web 使用 dev server，不是生产构建运行方式。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
@@ -348,7 +373,7 @@
 2. RAG 评估增强：补真实 provider 集成验证、答案质量评估、引用格式约束和失败降级策略。
 3. 真实推荐：将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
 4. 集成验证增强：将 Docker smoke test 接入 CI，补 pgvector SQL 断言、真实 provider 可选验证和失败日志收集。
-5. 安全收口：task 监控接口加认证或管理员保护；URL 重定向后再次校验；梳理 token 存储和登出策略。
+5. 安全收口增强：增加管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 6. 前端工程化：模块化 API client，补 timeout、统一 401、toast/loading/error boundary，并实际使用 React Query。
 7. 生产可复现：锁定前端依赖版本，增加生产 web 启动方式。
 

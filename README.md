@@ -13,7 +13,7 @@
 - 配置兴趣关键词、不感兴趣关键词、启用分类和推送相关字段。
 - 手动提交 URL 或纯文本。
 - 抓取网页正文并提取可读内容。
-- URL 安全检查，阻止 localhost、内网地址和保留地址，降低 SSRF 风险。
+- URL 安全检查，阻止 localhost、内网地址和保留地址；重定向后的最终 URL 也会再次校验，降低 SSRF 风险。
 - 全局内容表 `contents` 去重。
 - RouterAgent 路由和基于 `ChatModel` 的结构化摘要 Agent；模型返回异常时会降级为基础摘要。
 - 将内容保存到当前用户的私有知识库。
@@ -114,6 +114,7 @@ docker compose exec api alembic upgrade head
 - `POST /api/ingestions`：提交 URL 或文本，返回 `202 Accepted`、pending job 和 Celery `task_id`。
 - `GET /api/ingestions`：查看当前用户的采集任务列表。
 - `GET /api/ingestions/{id}`：轮询单个采集任务状态。
+- `POST /api/ingestions/{id}/replay`：重放当前用户自己的 failed 采集任务。
 
 知识库文档：
 

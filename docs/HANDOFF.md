@@ -8,7 +8,7 @@
 
 当前主要缺口：
 
-- 更完整的任务监控告警、失败任务人工重放和生产运维面板。
+- 更完整的任务监控告警、批量失败任务重放和生产运维面板。
 - 更完整的推送模板、退订、频控和投递告警。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 
@@ -113,6 +113,7 @@ PowerShell 激活虚拟环境：
 - `POST /api/ingestions`：创建 pending job，并投递 Celery `process_ingestion_job`。
 - `GET /api/ingestions`：查看当前用户任务列表。
 - `GET /api/ingestions/{id}`：轮询任务状态。
+- `POST /api/ingestions/{id}/replay`：重放当前用户自己的 failed 采集任务。
 
 文档：
 
@@ -164,7 +165,7 @@ PowerShell 激活虚拟环境：
 - `embed_document_chunks`：为已有文档 chunks 重新生成 embedding。
 - `cleanup_failed_jobs`：将超时的 running/retrying job 标记为 failed。
 
-已补 Celery Beat 定时调度、任务自动重试策略、每日推荐推送任务和 `/api/tasks/health`、`/api/tasks/schedule` 基础监控接口。后续还需要更完整的告警、失败任务人工重放和生产运维面板。
+已补 Celery Beat 定时调度、任务自动重试策略、每日推荐推送任务、需要登录访问的 `/api/tasks/health`、`/api/tasks/schedule` 基础监控接口，以及单个 failed ingestion job 重放接口。后续还需要更完整的告警、批量重放和生产运维面板。
 
 ## 核心流程
 
@@ -227,7 +228,7 @@ PowerShell 激活虚拟环境：
 - 不允许信任前端传入的 `user_id`。
 - 不允许硬编码密钥。
 - 不允许在日志中输出密码、token 或 API Key。
-- URL 抓取必须使用 SSRF 防护。
+- URL 抓取必须使用 SSRF 防护，重定向后的最终 URL 也必须再次校验。
 - 推荐保存和文档入库必须保持幂等。
 
 ## 集成验证
@@ -273,7 +274,7 @@ pytest
 ruff check app
 ```
 
-最近结果：summary/RAG/异步采集相关测试通过，`ruff check app` passed，`scripts/smoke_docker.ps1 -ValidateOnly` passed；此前全量后端测试 48 passed，前端 `npm run build` passed。
+最近结果：二期安全和任务运维相关测试通过，`ruff check app` passed；此前 summary/RAG/异步采集相关测试通过，`scripts/smoke_docker.ps1 -ValidateOnly` passed，全量后端测试 48 passed，前端 `npm run build` passed。
 
 ## 已知风险
 
@@ -298,9 +299,9 @@ ruff check app
 
 - `RecommenderAgent` 是规则评分，不是真模型推荐或学习型推荐。
 - 已新增 Docker Compose smoke 脚本，但还没接入 CI，也缺真实 provider 可选验证、pgvector SQL 断言和失败日志收集。
-- `/api/tasks/health` 和 `/api/tasks/schedule` 当前未加认证或管理员保护。
-- URL 抓取要确认重定向后的最终 URL 也经过 SSRF 校验。
-- 前端 token 存 localStorage，logout 只是本地清除 token。
+- `/api/tasks/health` 和 `/api/tasks/schedule` 已要求登录；后续还需管理员权限模型。
+- URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
+- 前端 token 存 localStorage，logout 只是本地清除 token；后续需要 token 黑名单或服务端会话撤销策略。
 - 前端 API client 仍缺 timeout、AbortController、统一 401、toast/loading/error boundary。
 - 前端依赖使用 `latest`，Docker Compose web 仍是 dev server，生产可复现性不足。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
@@ -313,6 +314,8 @@ ruff check app
 - `GeneralAgent`、`GitHubAgent`、`LifestyleAgent` 已从规则/固定摘要改为调用 `ChatModel` 生成结构化 JSON，并保留 fallback。
 - 已更新受影响后端测试，覆盖异步提交、worker 处理、下游文档/推荐/搜索链路、RAG prompt 和 summary fallback。
 - 已新增 Docker Compose smoke 脚本，覆盖 Alembic、API、worker、beat 和异步 ingestion 最小链路。
+- 已完成二期安全收口第一批：任务监控接口要求登录，URL 重定向后的最终地址再次经过 SSRF 校验。
+- 已新增单个 failed ingestion job 重放接口，覆盖成功、冲突和用户隔离测试。
 
 ### 已修补或部分过期
 
@@ -327,12 +330,12 @@ ruff check app
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性、模型失败降级、token 长度控制和 prompt 注入防护。
 3. 将 `RecommenderAgent` 从规则评分升级为模型辅助推荐，或持续明确标注为规则推荐。
 4. 增强 Docker Compose 集成验证：接入 CI、补 pgvector SQL 查询、真实 provider 可选验证和失败日志收集。
-5. 安全加固：task 接口认证、SSRF 重定向复查、token/登出策略。
+5. 安全加固增强：管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
 6. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
 
 ## 建议下一步
 
-1. 完成更完整的任务监控告警、失败任务人工重放和生产运维面板。
+1. 完成更完整的任务监控告警、批量失败任务重放和生产运维面板。
 2. 增强推送模板、退订、频控、投递告警和带签名的操作链接。
 3. 前端工程化：统一 API client、React Query、错误/加载/401 处理、依赖版本锁定。
 4. 做 pgvector 召回评估、参数调优和 rerank。

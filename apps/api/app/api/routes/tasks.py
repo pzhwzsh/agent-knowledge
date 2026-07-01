@@ -1,14 +1,16 @@
 ﻿from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.deps import get_current_user
+from app.models.user import User
 from app.tasks.celery_app import celery_app
 
 router = APIRouter()
 
 
 @router.get("/health")
-def task_health() -> dict[str, Any]:
+def task_health(current_user: User = Depends(get_current_user)) -> dict[str, Any]:
     inspector = celery_app.control.inspect(timeout=1.0)
     ping = inspector.ping() or {}
     stats = inspector.stats() or {}
@@ -22,7 +24,7 @@ def task_health() -> dict[str, Any]:
 
 
 @router.get("/schedule")
-def task_schedule() -> dict[str, Any]:
+def task_schedule(current_user: User = Depends(get_current_user)) -> dict[str, Any]:
     schedules = []
     for name, entry in celery_app.conf.beat_schedule.items():
         schedules.append(

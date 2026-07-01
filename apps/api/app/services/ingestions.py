@@ -30,6 +30,20 @@ class IngestionService:
         self.db.refresh(job)
         return job
 
+    def reset_failed_job_for_retry(self, user_id: UUID, job_id: UUID) -> IngestionJob:
+        job = self.get_job(user_id, job_id)
+        if job.status != JobStatus.FAILED.value:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Only failed ingestion jobs can be replayed",
+            )
+        reset_job = self.jobs.reset_for_retry(user_id, job_id)
+        if reset_job is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ingestion job not found")
+        self.db.commit()
+        self.db.refresh(reset_job)
+        return reset_job
+
     def mark_job_status(
         self,
         user_id: UUID,

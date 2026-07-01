@@ -50,6 +50,18 @@ class IngestionJobRepository:
         self.db.flush()
         return job
 
+    def reset_for_retry(self, user_id: UUID, job_id: UUID) -> IngestionJob | None:
+        job = self.get_for_user(user_id, job_id)
+        if job is None:
+            return None
+        job.status = "pending"
+        job.error_message = None
+        job.finished_at = None
+        job.retry_count += 1
+        self.db.add(job)
+        self.db.flush()
+        return job
+
     def mark_status(
         self,
         user_id: UUID,

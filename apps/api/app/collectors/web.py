@@ -24,6 +24,7 @@ class WebPageCollector(Collector):
         try:
             response = client.get(source)
             response.raise_for_status()
+            final_url = validate_public_http_url(str(response.url))
         except httpx.HTTPStatusError as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
@@ -38,7 +39,7 @@ class WebPageCollector(Collector):
         if not text.strip():
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="No readable text found")
         return {
-            "url": str(response.url),
+            "url": final_url,
             "title": title,
             "text": text.strip(),
             "fetched_at": datetime.now(UTC).isoformat(),
