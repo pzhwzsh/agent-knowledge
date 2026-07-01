@@ -120,6 +120,10 @@ Invoke-JsonRequest -Method Post -Uri "http://localhost:8000/api/auth/register" -
 $tokenResponse = Invoke-JsonRequest -Method Post -Uri "http://localhost:8000/api/auth/login" -Body @{ email = $email; password = $password }
 $headers = @{ Authorization = "Bearer $($tokenResponse.access_token)" }
 
+Invoke-SmokeStep "promoting smoke user to admin for task monitor checks" {
+    & docker compose exec -T postgres psql -U postgres -d personal_knowledge_radar -tAc "UPDATE users SET is_admin = true WHERE email = '$email';"
+} | Out-Null
+
 Invoke-SmokeStep "checking authenticated task schedule endpoint" {
     $schedule = Invoke-RestMethod -Method Get -Uri "http://localhost:8000/api/tasks/schedule" -Headers $headers
     if (-not $schedule.beat_schedule -or $schedule.beat_schedule.Count -lt 1) {

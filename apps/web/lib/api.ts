@@ -3,6 +3,7 @@
   email: string;
   display_name: string | null;
   is_active: boolean;
+  is_admin: boolean;
 };
 
 export type TokenResponse = {

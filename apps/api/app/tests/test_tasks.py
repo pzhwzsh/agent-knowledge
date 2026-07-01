@@ -5,14 +5,26 @@ from sqlalchemy.orm import Session
 
 from app.models.enums import JobStatus
 from app.models.job import IngestionJob
+from app.models.logs import AuditLog
+from app.models.user import User
 from app.schemas.ingestion import IngestionJobCreate
 from app.services.ingestions import IngestionService
 from app.tasks import jobs
 
 
-def register_and_login_for_tasks(client, email: str = "tasks-auth@example.com") -> str:
+def register_and_login_for_tasks(client, email: str = "tasks-auth@example.com", *, is_admin: bool = False) -> str:
     response = client.post("/api/auth/register", json={"email": email, "password": "password123"})
     assert response.status_code == 201, response.text
+    if is_admin:
+        from app.core.security import hash_password
+        from app.tests.conftest import TestingSessionLocal
+
+        with TestingSessionLocal() as db:
+            user = db.query(User).filter(User.email == email).one()
+            user.is_admin = True
+            user.password_hash = hash_password("password123")
+            db.add(user)
+            db.commit()
     response = client.post("/api/auth/login", json={"email": email, "password": "password123"})
     assert response.status_code == 200, response.text
     return response.json()["access_token"]
@@ -147,8 +159,15 @@ def test_task_schedule_endpoint_requires_authentication(client) -> None:
     assert response.status_code == 401
 
 
-def test_task_schedule_endpoint(client) -> None:
-    token = register_and_login_for_tasks(client)
+def test_task_schedule_endpoint_forbids_non_admin(client) -> None:
+    token = register_and_login_for_tasks(client, "tasks-non-admin@example.com")
+    response = client.get("/api/tasks/schedule", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 403
+
+
+def test_task_schedule_endpoint(client, db_session: Session) -> None:
+    token = register_and_login_for_tasks(client, is_admin=True)
     response = client.get("/api/tasks/schedule", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
@@ -156,3 +175,5 @@ def test_task_schedule_endpoint(client) -> None:
     assert data["timezone"]
     assert any(item["task"] == "cleanup_failed_jobs" for item in data["beat_schedule"])
     assert "cleanup_failed_jobs" in data["registered_tasks"]
+    audit_log = db_session.query(AuditLog).filter(AuditLog.action == "task_schedule_view").one_or_none()
+    assert audit_log is not None

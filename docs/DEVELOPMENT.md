@@ -69,13 +69,13 @@
 - SQLAlchemy 2.x 基础配置。
 - Alembic 初始迁移。
 - structlog 基础日志配置。
-- Celery app、worker、beat、核心业务任务入口、重试策略和基础监控接口已完成。
+- Celery app、worker、beat、核心业务任务入口、重试策略和管理员保护的基础监控接口已完成。
 
 ### 数据库模型
 
 已建立模型和初始迁移：
 
-- `users`
+- `users`（含 `is_admin` 管理员标记）
 - `user_preferences`
 - `sources`
 - `contents`
@@ -109,6 +109,7 @@
 
 - 密码已 hash。
 - JWT secret 来自环境变量。
+- `users.is_admin` 用于管理员权限基础。
 - 后端不信任前端传入的 `user_id`。
 - 当前用户从 JWT 中解析。
 
@@ -311,7 +312,7 @@
 - `WebPageCollector` 会在请求完成后对 `response.url` 再次执行 SSRF 校验。
 - 新增测试覆盖“初始公网 URL 重定向到 localhost/内网地址时拒绝访问”。
 
-仍需继续：管理员角色/权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理、审计日志落库。
+仍需继续：管理员后台、token 黑名单或服务端会话撤销、审计日志查询页面和更细权限分级。
 
 ### 第十五阶段：失败采集任务重放
 
@@ -393,6 +394,19 @@
 
 仍需继续：接入 CI、真实 provider 可选验证、完整清理策略和更细的失败产物归档。
 
+### 第二十二阶段：管理员权限和审计日志基础
+
+本阶段已完成：
+
+- `users` 新增 `is_admin` 字段，并新增 Alembic migration。
+- 新增 `get_current_admin_user` 依赖。
+- 新增 `AuditLogRepository` 和 `AuditService`。
+- `/api/tasks/health` 和 `/api/tasks/schedule` 升级为管理员访问，并记录 task monitor 查看审计日志。
+- smoke 脚本会把临时 smoke 用户提升为 admin，用于验证管理员保护的 task 监控接口。
+- 已补充普通用户 403、管理员访问和审计日志写入测试。
+
+仍需继续：管理员后台、审计日志查询 API/UI、token 黑名单或服务端会话撤销、更细权限分级。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -436,7 +450,7 @@
 
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback；仍缺真实 provider 评估、用户反馈学习和个性化权重。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
-- 安全收口还需继续：task health/schedule 已要求登录，URL 重定向后 SSRF 已复查并加测试；仍缺管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
+- 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试；仍缺管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
 - 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401；仍缺 React Query 实际接入、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
@@ -459,7 +473,7 @@
 2. RAG 评估增强：补真实 provider 集成验证、答案质量评估、引用编号稳定性评估、召回评估和 rerank。
 3. 推荐质量增强：补真实 provider 推荐评估、用户反馈学习、个性化权重和去重排序策略。
 4. 集成验证增强：将 Docker smoke test 接入 CI，补真实 provider 可选验证、完整清理策略和失败产物归档。
-5. 安全收口增强：增加管理员权限模型、token 黑名单或服务端会话撤销、前端 401 统一处理和审计日志落库。
+5. 安全收口增强：增加管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
 6. 前端工程化增强：实际接入 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 7. 生产可复现增强：处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 

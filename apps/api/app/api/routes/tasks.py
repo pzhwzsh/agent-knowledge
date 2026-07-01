@@ -1,16 +1,23 @@
 ﻿from typing import Any
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_admin_user
+from app.db.session import get_db
 from app.models.user import User
+from app.services.audit import AuditService
 from app.tasks.celery_app import celery_app
 
 router = APIRouter()
 
 
 @router.get("/health")
-def task_health(current_user: User = Depends(get_current_user)) -> dict[str, Any]:
+def task_health(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    AuditService(db).record(user_id=current_user.id, action="task_health_view", resource_type="task_monitor")
     inspector = celery_app.control.inspect(timeout=1.0)
     ping = inspector.ping() or {}
     stats = inspector.stats() or {}
@@ -24,7 +31,11 @@ def task_health(current_user: User = Depends(get_current_user)) -> dict[str, Any
 
 
 @router.get("/schedule")
-def task_schedule(current_user: User = Depends(get_current_user)) -> dict[str, Any]:
+def task_schedule(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    AuditService(db).record(user_id=current_user.id, action="task_schedule_view", resource_type="task_monitor")
     schedules = []
     for name, entry in celery_app.conf.beat_schedule.items():
         schedules.append(
