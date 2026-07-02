@@ -1,4 +1,4 @@
-﻿from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from app.core.config import get_settings
@@ -7,6 +7,7 @@ from app.llm.providers import get_embedding_model
 from app.models.enums import JobStatus
 from app.repositories.documents import DocumentChunkRepository, DocumentRepository
 from app.repositories.ingestions import IngestionJobRepository
+from app.repositories.tokens import RevokedTokenRepository
 from app.repositories.users import UserRepository
 from app.schemas.ingestion import IngestionJobCreate
 from app.services.discovery import DiscoveryService
@@ -98,6 +99,14 @@ def cleanup_failed_jobs(*, older_than_minutes: int = 60, limit: int = 100) -> di
                 error_message="Marked failed by cleanup_failed_jobs after timeout.",
             )
         return {"marked_failed": len(stale_jobs)}
+
+
+@celery_app.task(name="cleanup_revoked_tokens")
+def cleanup_revoked_tokens(*, limit: int = 500) -> dict[str, object]:
+    with SessionLocal() as db:
+        deleted = RevokedTokenRepository(db).delete_expired(before=datetime.now(UTC), limit=limit)
+        db.commit()
+        return {"deleted": deleted}
 
 
 @celery_app.task(name="push_daily_recommendations", **TASK_RETRY_KWARGS)

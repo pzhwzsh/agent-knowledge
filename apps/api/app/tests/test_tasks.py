@@ -150,6 +150,7 @@ def test_celery_beat_schedule_contains_core_jobs() -> None:
     from app.tasks.celery_app import celery_app
 
     assert "cleanup-failed-jobs" in celery_app.conf.beat_schedule
+    assert "cleanup-revoked-tokens" in celery_app.conf.beat_schedule
     assert "fetch-daily-sources-for-active-users" in celery_app.conf.beat_schedule
 
 
@@ -177,3 +178,27 @@ def test_task_schedule_endpoint(client, db_session: Session) -> None:
     assert "cleanup_failed_jobs" in data["registered_tasks"]
     audit_log = db_session.query(AuditLog).filter(AuditLog.action == "task_schedule_view").one_or_none()
     assert audit_log is not None
+
+
+def test_cleanup_revoked_tokens_deletes_only_expired(monkeypatch, db_session: Session) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from app.core.security import hash_password
+    from app.models.token import RevokedToken
+    from app.models.user import User
+
+    user = User(email="revoked-cleanup@example.com", password_hash=hash_password("password123"))
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    expired = RevokedToken(user_id=user.id, jti="expired-token", expires_at=datetime.now(UTC) - timedelta(minutes=1))
+    active = RevokedToken(user_id=user.id, jti="active-token", expires_at=datetime.now(UTC) + timedelta(hours=1))
+    db_session.add_all([expired, active])
+    db_session.commit()
+    monkeypatch.setattr(jobs, "SessionLocal", lambda: db_session)
+
+    result = jobs.cleanup_revoked_tokens(limit=100)
+
+    remaining = {token.jti for token in db_session.query(RevokedToken).all()}
+    assert result == {"deleted": 1}
+    assert remaining == {"active-token"}

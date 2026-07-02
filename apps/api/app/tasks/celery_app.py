@@ -22,6 +22,11 @@ celery_app.conf.update(
             "schedule": settings.celery_cleanup_interval_minutes * 60.0,
             "kwargs": {"older_than_minutes": 60, "limit": 100},
         },
+        "cleanup-revoked-tokens": {
+            "task": "cleanup_revoked_tokens",
+            "schedule": settings.celery_cleanup_interval_minutes * 60.0,
+            "kwargs": {"limit": 500},
+        },
         "fetch-daily-sources-for-active-users": {
             "task": "fetch_daily_sources_for_active_users",
             "schedule": crontab(

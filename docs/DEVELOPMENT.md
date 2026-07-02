@@ -482,7 +482,18 @@
 
 兼容说明：升级前已经签发、没有 `jti` 的旧 token 仍按旧逻辑校验，避免部署后把所有已登录用户立即踢下线；它们自然过期后，新 token 都会进入可撤销机制。
 
-仍需继续：刷新 token、全设备登出、撤销记录清理任务、会话列表 UI 和更细权限分级。
+仍需继续：刷新 token、全设备登出、会话列表 UI 和更细权限分级。
+
+### 第二十九阶段：撤销 token 清理任务第一批
+
+本阶段已完成：
+
+- `RevokedTokenRepository` 新增 `delete_expired()`，按 `expires_at` 清理已经过期的撤销记录。
+- Celery 新增 `cleanup_revoked_tokens` 任务，返回删除数量。
+- Celery Beat 新增 `cleanup-revoked-tokens` 定时任务，复用现有 cleanup interval。
+- 已补充任务测试，确认只删除过期 token，未过期撤销记录会保留。
+
+仍需继续：按用户/设备维度的会话管理、全设备登出、清理指标和告警。
 
 ## 未完成内容
 
@@ -516,7 +527,7 @@
 - tasks。
 - feedback、管理员反馈处理和审计日志查询。
 
-最近通过结果：本轮 `python -m pytest app/tests/test_feedback.py` 为 5 passed，`python -m pytest app/tests/test_audit.py` 为 3 passed；历史后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
+最近通过结果：本轮 `python -m pytest app/tests/test_tasks.py` 为 10 passed；本轮 `python -m pytest app/tests/test_feedback.py` 为 5 passed，`python -m pytest app/tests/test_audit.py` 为 3 passed；历史后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 外部分析核对与修补计划
 
