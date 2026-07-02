@@ -13,6 +13,11 @@ class UserFeedbackCreate(BaseModel):
     metadata_json: dict[str, object] = Field(default_factory=dict)
 
 
+class UserFeedbackUpdate(BaseModel):
+    status: Literal["open", "planned", "in_progress", "resolved", "wont_fix", "deleted"]
+    metadata_json: dict[str, object] | None = None
+
+
 class UserFeedbackResponse(UserFeedbackCreate):
     id: UUID
     user_id: UUID

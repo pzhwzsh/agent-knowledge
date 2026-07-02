@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { ReactNode } from "react";
@@ -13,8 +13,13 @@ const navItems = [
   { href: "/feedback", label: "反馈维修" },
 ];
 
+const adminNavItems = [
+  { href: "/admin/feedback", label: "反馈处理" },
+];
+
 export function AppShell({ children, user, onSignOut }: { children: ReactNode; user: User | null; onSignOut: () => void }) {
   const displayName = user?.display_name || user?.email || "未登录";
+  const visibleNavItems = user?.is_admin ? [...navItems, ...adminNavItems] : navItems;
   return (
     <main className="min-h-screen bg-[#08111f] text-slate-100">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.18),transparent_32%),radial-gradient(circle_at_82%_12%,rgba(168,85,247,0.18),transparent_30%)]" />
@@ -30,7 +35,7 @@ export function AppShell({ children, user, onSignOut }: { children: ReactNode; u
             </span>
           </Link>
           <nav className="mt-8 space-y-2">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <Link className="block rounded-2xl border border-transparent px-4 py-3 text-sm text-slate-300 transition hover:border-white/10 hover:bg-white/[0.07] hover:text-white" href={item.href} key={item.href}>{item.label}</Link>
             ))}
           </nav>
@@ -44,7 +49,7 @@ export function AppShell({ children, user, onSignOut }: { children: ReactNode; u
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-white/10 bg-white/[0.07] p-3 backdrop-blur-2xl lg:hidden">
             <Link className="font-semibold" href="/dashboard">个人信息雷达</Link>
             <div className="flex flex-wrap gap-2 text-xs">
-              {navItems.map((item) => <Link className="rounded-full bg-white/10 px-3 py-1.5" href={item.href} key={item.href}>{item.label}</Link>)}
+              {visibleNavItems.map((item) => <Link className="rounded-full bg-white/10 px-3 py-1.5" href={item.href} key={item.href}>{item.label}</Link>)}
             </div>
           </div>
           {children}

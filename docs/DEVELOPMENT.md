@@ -41,7 +41,7 @@
 - Rerank。
 - 多模型路由。
 - 文档导出。
-- 管理后台。
+- 完整管理后台仍未完成；当前只有反馈处理后台第一版。
 - token 成本统计。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 
@@ -444,7 +444,19 @@
 - 反馈用于记录实际使用中要修、要删、出错或想增强的功能，为后续调试/维修/删减提供清单。
 - 已补充反馈提交、列表和用户隔离测试。
 
-仍需继续：管理员查看/处理反馈、反馈状态流转、按反馈生成维修计划、与审计/任务系统联动。
+仍需继续：更细的反馈分派、按反馈生成维修计划、与任务系统联动。
+
+### 第二十六阶段：反馈处理后台第一批
+
+本阶段已完成：
+
+- 新增管理员接口 `GET /api/feedback/admin/all`，可查看全部用户反馈并按 status 筛选。
+- 新增管理员接口 `PATCH /api/feedback/admin/{id}`，支持将反馈状态改为 open/planned/in_progress/resolved/wont_fix/deleted。
+- 管理员查看和更新反馈会写入 `AuditLog`，便于后续追踪谁处理了哪些反馈。
+- 前端新增 `/admin/feedback` 反馈处理后台，只有 `is_admin` 用户侧边栏显示入口。
+- 已补充管理员可查看/更新、普通用户 403 和审计日志写入测试。
+
+仍需继续：完整管理员后台、反馈负责人/优先级/处理备注、由反馈生成维修任务、审计日志查询 UI/API。
 
 ## 未完成内容
 
@@ -458,7 +470,7 @@
 - 真实 GitHub API 集成。
 - 视频/PDF 完整解析。
 - 高级推荐算法。
-- 管理后台。
+- 完整管理后台仍未完成；当前只有反馈处理后台第一版。
 - 数据导出。
 - token 成本统计。
 - 更细的 pgvector 参数调优、召回评估和重排策略。
@@ -476,8 +488,9 @@
 - recommendations。
 - discovery。
 - tasks。
+- feedback 和管理员反馈处理。
 
-最近通过结果：后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
+最近通过结果：本轮 `python -m pytest app/tests/test_feedback.py` 为 5 passed；历史后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 外部分析核对与修补计划
 
@@ -489,7 +502,7 @@
 
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
-- 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试；仍缺管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
+- 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台第一版已完成；仍缺完整管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
 - 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations；仍缺其余页面迁移、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。

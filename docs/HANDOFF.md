@@ -323,7 +323,7 @@ ruff check app
 
 - `RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
-- `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；后续还需管理员后台和审计查询 UI/API。
+- `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；反馈处理后台第一版已完成；后续还需完整管理员后台和审计查询 UI/API。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 存 localStorage，logout 只是本地清除 token；后续需要 token 黑名单或服务端会话撤销策略。
 - 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations；仍缺其余页面迁移、toast/loading/error boundary 和页面级 skeleton。
@@ -350,6 +350,7 @@ ruff check app
 - 已完成推荐反馈加权第一批：saved/disliked/ignored 历史会影响后续相似推荐评分。
 - 已完成 React Query 工程化第一批：全局 QueryClientProvider，dashboard/recommendations 迁移到 query/mutation。
 - 已完成使用反馈闭环第一批：`/api/feedback`、`user_feedback` 表和前端 `/feedback` 反馈维修台。
+- 已完成反馈处理后台第一批：管理员可查看全部反馈、更新状态，并写入审计日志；前端新增 `/admin/feedback`。
 
 ### 已修补或部分过期
 
@@ -364,7 +365,7 @@ ruff check app
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性评估、召回评估、rerank 和人工反馈调优。
 3. 推荐质量增强：真实 provider 评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 增强 Docker Compose 集成验证：接入 CI、真实 provider 可选验证、完整清理策略和失败产物归档。
-5. 安全加固增强：管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
+5. 安全加固增强：完整管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
 6. 前端工程化增强：剩余页面 React Query 迁移、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
 
 ## 建议下一步
