@@ -25,11 +25,11 @@
 - GitHub Trending 和 RSS 发现，发现结果进入推荐箱，不直接进入知识库。
 - Celery 后台任务：核心任务入口、Beat 定时调度、任务重试策略、活跃用户每日来源抓取、每日推荐推送、超时任务清理、过期撤销 token 清理和管理员保护的基础监控接口。
 - 推送能力：站内推送日志、邮件推送、钉钉推送、推送日志查询、手动触发每日推荐推送、禁用推送通道和每日成功推送频控。
-- 前端已接入后端：支持注册、登录、token 保存、服务端登出撤销、登录过期统一处理、API 超时控制、React Query 基础数据缓存、文档页/偏好页/搜索问答页 React Query 数据管理、统一 query 错误 toast、前端组件测试基础、API client 单元测试第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、全局 toast 提示、全局错误页、页面级 skeleton、仪表盘、文档、推荐箱、搜索问答、偏好设置、快速采集和反馈维修台；管理员可进入反馈处理后台查看全部反馈并更新处理状态，也可以进入审计日志页面查看敏感操作记录。
+- 前端已接入后端：支持注册、登录、token 保存、服务端登出撤销、登录过期统一处理、API 超时控制、React Query 基础数据缓存、文档页/偏好页/搜索问答页 React Query 数据管理、统一 query 错误 toast、前端组件测试基础、API client 单元测试第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、QueryState 测试补强第一批、全局 toast 提示、全局错误页、页面级 skeleton、仪表盘、文档、推荐箱、搜索问答、偏好设置、快速采集和反馈维修台；管理员可进入反馈处理后台查看全部反馈并更新处理状态，也可以进入审计日志页面查看敏感操作记录。
 
 ## 二期第一批状态
 
-二期第一批已完成：安全收口、任务重放、推送控制、前端 API client 工程化、生产 compose、模型辅助推荐、使用反馈闭环和反馈处理后台第一版、审计日志查询第一版和服务端登出撤销第一版和撤销 token 清理任务第一版和全局 toast 第一批和全局错误页第一批和页面级 skeleton 第一批、Search React Query 迁移第一批、统一 Query UX 第一批、Admin Query UX 收口第一批、前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批和 ToastProvider 测试覆盖第一批。当前项目仍不是完整商业化生产版本，三期会继续补 CI/CD、管理后台、审计日志、React Query/toast/error boundary、浏览器插件、视频字幕、Rerank 和多模型路由等能力。
+二期第一批已完成：安全收口、任务重放、推送控制、前端 API client 工程化、生产 compose、模型辅助推荐、使用反馈闭环和反馈处理后台第一版、审计日志查询第一版和服务端登出撤销第一版和撤销 token 清理任务第一版和全局 toast 第一批和全局错误页第一批和页面级 skeleton 第一批、Search React Query 迁移第一批、统一 Query UX 第一批、Admin Query UX 收口第一批、前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批和 QueryState 测试补强第一批。当前项目仍不是完整商业化生产版本，三期会继续补 CI/CD、管理后台、审计日志、React Query/toast/error boundary、浏览器插件、视频字幕、Rerank 和多模型路由等能力。
 
 ## 当前还没有完成什么
 
@@ -43,7 +43,7 @@
 - 视频字幕解析。
 - PDF 完整解析。
 - 浏览器插件。
-- 完整管理后台仍未完成；当前仅有反馈处理后台第一版、审计日志查询第一版和服务端登出撤销第一版和撤销 token 清理任务第一版和全局 toast 第一批和全局错误页第一批和页面级 skeleton 第一批、Search React Query 迁移第一批、统一 Query UX 第一批、Admin Query UX 收口第一批、前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批和 ToastProvider 测试覆盖第一批。
+- 完整管理后台仍未完成；当前仅有反馈处理后台第一版、审计日志查询第一版和服务端登出撤销第一版和撤销 token 清理任务第一版和全局 toast 第一批和全局错误页第一批和页面级 skeleton 第一批、Search React Query 迁移第一批、统一 Query UX 第一批、Admin Query UX 收口第一批、前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批和 QueryState 测试补强第一批。
 - 知识库导出。
 - 更细的 pgvector 参数调优、召回评估和重排策略。
 

@@ -721,6 +721,19 @@
 
 仍需继续：扩展 React Query 页面状态和更多表单边界测试。
 
+
+### 第四十六阶段：QueryState 测试补强第一批
+
+本阶段已完成：
+
+- 补充 `components/__tests__/QueryState.test.tsx` 覆盖。
+- 覆盖 `SkeletonList` 自定义 `renderItem` 渲染。
+- 覆盖 `useQueryErrorToast` 在非 `Error` 错误值时使用 fallback 文案。
+
+验证结果：前端 `npm run test` 4 files / 14 tests passed；前端 `npm run build` passed；相关文件 IDE 诊断无错误。
+
+仍需继续：扩展 React Query 页面状态和更多表单边界测试。
+
 ## 测试现状
 
 当前后端测试覆盖：
@@ -736,7 +749,7 @@
 - tasks。
 - feedback、管理员反馈处理和审计日志查询。
 
-最近通过结果：本轮后端 `python -m pytest` 为 73 passed；本轮前端 `npm run test` 为 4 files / 12 tests passed；本轮前端 `npm run build` passed；`ruff check app` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
+最近通过结果：本轮后端 `python -m pytest` 为 73 passed；本轮前端 `npm run test` 为 4 files / 14 tests passed；本轮前端 `npm run build` passed；`ruff check app` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 外部分析核对与修补计划
 
@@ -749,7 +762,7 @@
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；服务端登出撤销第一版已完成；仍缺完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
-- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，统一 query error toast 第一批、Admin Query UX 收口第一批、前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批和 documents 页面体验收口已完成；仍需扩展前端测试覆盖和统一 loading 细节。
+- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，统一 query error toast 第一批、Admin Query UX 收口第一批、前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、QueryState 测试补强第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批和 documents 页面体验收口已完成；仍需扩展前端测试覆盖和统一 loading 细节。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
 - AuditLog 仍是模型占位，尚未形成完整审计写入链路。

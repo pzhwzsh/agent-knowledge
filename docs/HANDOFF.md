@@ -326,7 +326,8 @@ ruff check app
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；反馈处理后台和审计日志查询第一版已完成；后续还需完整管理员后台、审计导出和告警。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 仍存 localStorage；服务端登出撤销第一版已完成，新 token 带 `jti` 且 logout 会写入撤销表。后续仍需要刷新 token、全设备登出和会话列表；已过期撤销记录已有定时清理任务。
-- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、统一 query UX 第一批和 Admin Query UX 收口第一批已完成；仍需扩展前端测试覆盖和统一 loading 细节。
+- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、QueryState 测试补强第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、统一 query UX 第一批和 Admin Query UX 收口第一批已完成；仍需扩展前端测试覆盖和统一 loading 细节。
+- 已完成 QueryState 测试补强第一批：覆盖 `SkeletonList.renderItem` 和非 Error 错误 fallback toast。
 - 已完成 ToastProvider 测试覆盖第一批：`ToastProvider.test.tsx` 覆盖三种 toast 类型、手动关闭和自动消失。
 - 已完成登录页交互测试第一批：`page.test.tsx` 覆盖登录成功、注册后自动登录和认证失败 toast。
 - 已完成 Tailwind v4 样式入口修复：`globals.css` 改用 `@import "tailwindcss"` 和 `@source`，登录/注册页不再以裸 HTML 形态显示。
