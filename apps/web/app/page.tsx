@@ -1,25 +1,25 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest, TokenResponse, User } from "../lib/api";
 import { storeToken } from "../lib/auth";
+import { useToast } from "../components/ToastProvider";
 
 type AuthMode = "login" | "register";
 
 export default function Home() {
   const router = useRouter();
+  const { notify } = useToast();
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
-    setMessage("");
     try {
       if (authMode === "register") {
         await apiRequest<User>("/api/auth/register", {
@@ -32,9 +32,10 @@ export default function Home() {
         body: JSON.stringify({ email, password }),
       }, null);
       storeToken(login.access_token);
+      notify(authMode === "register" ? "注册成功，已进入工作台。" : "登录成功。", "success");
       router.push("/dashboard");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "认证失败，请稍后再试");
+      notify(error instanceof Error ? error.message : "认证失败，请稍后再试", "error");
     } finally {
       setIsLoading(false);
     }
@@ -71,7 +72,6 @@ export default function Home() {
               <Input label="密码" placeholder="至少 8 位密码" type="password" value={password} onChange={setPassword} required minLength={8} />
               <button className="group relative w-full overflow-hidden rounded-2xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-400/25 transition hover:-translate-y-0.5 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60" disabled={isLoading} type="submit"><span className="relative z-10">{isLoading ? "处理中..." : authMode === "login" ? "进入个人雷达" : "创建并登录"}</span><span className="absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg] bg-white/60 transition duration-700 group-hover:left-full" /></button>
             </form>
-            {message ? <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-slate-200">{message}</p> : null}
           </div>
         </div>
         <div className="flex min-h-[680px] flex-col justify-center rounded-[2rem] border border-white/10 bg-slate-950/35 p-8 shadow-2xl shadow-slate-950/50 backdrop-blur-2xl">
