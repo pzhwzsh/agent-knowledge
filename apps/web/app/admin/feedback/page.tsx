@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest, UserFeedback } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
 import { AppShell, EmptyState, PageCard } from "../../../components/AppShell";
+import { SkeletonList, useQueryErrorToast } from "../../../components/QueryState";
 import { useToast } from "../../../components/ToastProvider";
 
 const statuses = ["open", "planned", "in_progress", "resolved", "wont_fix", "deleted"] as const;
@@ -28,6 +29,8 @@ export default function AdminFeedbackPage() {
     enabled: Boolean(auth.token && auth.user?.is_admin),
     queryFn: () => apiRequest<UserFeedback[]>(`/api/feedback/admin/all${statusFilter ? `?status=${statusFilter}` : ""}`, {}, auth.token),
   });
+
+  useQueryErrorToast({ error: feedbackQuery.error, fallbackMessage: "Failed to load admin feedback", isError: feedbackQuery.isError });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: FeedbackStatus }) =>
@@ -58,7 +61,7 @@ export default function AdminFeedbackPage() {
           </label>
         </div>
         <div className="mt-6 space-y-3">
-          {feedbackQuery.isLoading ? <EmptyState text="正在加载用户反馈..." /> : null}
+          {feedbackQuery.isLoading ? <SkeletonList className="space-y-3" count={3} /> : null}
           {items.map((item) => (
             <article className="rounded-3xl border border-white/10 bg-slate-950/35 p-5" key={item.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -78,7 +81,7 @@ export default function AdminFeedbackPage() {
               </div>
             </article>
           ))}
-          {!feedbackQuery.isLoading && items.length === 0 ? <EmptyState text="当前没有符合条件的反馈。" /> : null}
+          {feedbackQuery.isLoading ? <SkeletonList className="space-y-3" count={3} /> : null}
         </div>
       </PageCard>
     </AppShell>

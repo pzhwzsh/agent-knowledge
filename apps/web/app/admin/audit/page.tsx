@@ -6,12 +6,11 @@ import { useRouter } from "next/navigation";
 import { apiRequest, AuditLog } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
 import { AppShell, EmptyState, PageCard } from "../../../components/AppShell";
-import { useToast } from "../../../components/ToastProvider";
+import { SkeletonList, useQueryErrorToast } from "../../../components/QueryState";
 
 export default function AdminAuditPage() {
   const router = useRouter();
   const auth = useAuth();
-  const { notify } = useToast();
   const [action, setAction] = useState("");
   const [resourceType, setResourceType] = useState("");
 
@@ -32,9 +31,7 @@ export default function AdminAuditPage() {
     },
   });
 
-  useEffect(() => {
-    if (query.isError) notify("审计日志加载失败，请确认当前账号有管理员权限。", "error");
-  }, [notify, query.isError]);
+  useQueryErrorToast({ error: query.error, fallbackMessage: "Failed to load audit logs", isError: query.isError });
 
   const logs = query.data ?? [];
   return (
@@ -56,7 +53,7 @@ export default function AdminAuditPage() {
           </label>
         </div>
         <div className="mt-6 space-y-3">
-          {query.isLoading ? <EmptyState text="正在加载审计日志..." /> : null}
+          {query.isLoading ? <SkeletonList className="space-y-3" count={3} /> : null}
           {query.isError ? <EmptyState text="审计日志加载失败，请确认当前账号有管理员权限。" /> : null}
           {logs.map((log) => (
             <article className="rounded-3xl border border-white/10 bg-slate-950/35 p-5" key={log.id}>
@@ -71,7 +68,7 @@ export default function AdminAuditPage() {
               <pre className="mt-4 overflow-auto rounded-2xl border border-white/10 bg-black/30 p-3 text-xs leading-5 text-slate-300">{JSON.stringify(log.metadata_json, null, 2)}</pre>
             </article>
           ))}
-          {!query.isLoading && !query.isError && logs.length === 0 ? <EmptyState text="当前没有符合条件的审计日志。" /> : null}
+          {query.isLoading ? <SkeletonList className="space-y-3" count={3} /> : null}
         </div>
       </PageCard>
     </AppShell>
