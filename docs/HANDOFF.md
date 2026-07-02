@@ -327,6 +327,7 @@ ruff check app
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 仍存 localStorage；服务端登出撤销第一版已完成，新 token 带 `jti` 且 logout 会写入撤销表。后续仍需要刷新 token、全设备登出和会话列表；已过期撤销记录已有定时清理任务。
 - 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations，全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、documents React Query 和 preferences React Query 迁移第一批已完成；仍缺统一 loading。
+- 已完成 search React Query 迁移第一批：语义搜索和知识库问答由 mutation 管理，按钮 pending 状态和 skeleton 已接入。
 - 前端依赖已锁定，已新增生产 compose override；仍需治理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
 
@@ -376,13 +377,13 @@ ruff check app
 3. 推荐质量增强：真实 provider 评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 增强 Docker Compose 集成验证：接入 CI、真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全加固增强：完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
-6. 前端工程化增强：剩余页面 React Query 迁移、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
+6. 前端工程化增强：统一 query error toast、统一 loading、页面级 skeleton、自动化测试和依赖版本锁定。
 
 ## 建议下一步
 
 1. 完成更完整的任务监控告警、批量失败任务重放和生产运维面板。
 2. 增强推送模板、带签名退订链接、可配置频控、投递告警和操作链接。
-3. 前端工程化：React Query、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：统一 query error toast、统一 loading、更多页面级 skeleton、自动化测试和依赖版本锁定。
 4. 做 pgvector 召回评估、参数调优和 rerank。
 5. 增加 Docker Compose 端到端验证。
 
