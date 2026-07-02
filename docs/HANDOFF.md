@@ -326,7 +326,7 @@ ruff check app
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；反馈处理后台和审计日志查询第一版已完成；后续还需完整管理员后台、审计导出和告警。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 仍存 localStorage；服务端登出撤销第一版已完成，新 token 带 `jti` 且 logout 会写入撤销表。后续仍需要刷新 token、全设备登出和会话列表；已过期撤销记录已有定时清理任务。
-- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations，全局 toast 第一批已完成；仍缺其余页面迁移、统一 loading/error boundary 和页面级 skeleton。
+- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations，全局 toast 第一批和全局错误页第一批已完成；仍缺其余页面迁移、统一 loading 和页面级 skeleton。
 - 前端依赖已锁定，已新增生产 compose override；仍需治理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
 
@@ -355,6 +355,7 @@ ruff check app
 - 已完成服务端登出撤销第一批：新 JWT 带 `jti`，`POST /api/auth/logout` 会撤销当前 token，已撤销 token 再访问接口返回 401。
 - 已完成撤销 token 清理任务第一批：Celery Beat 会定期运行 `cleanup_revoked_tokens` 清理已过期撤销记录。
 - 已完成全局 toast 第一批：登录、dashboard 快速采集、recommendations 操作和 feedback 提交已接入全局 toast。
+- 已完成全局错误页第一批：新增 `app/error.tsx`，页面异常时提供重试和返回仪表盘入口。
 
 ### 已修补或部分过期
 
