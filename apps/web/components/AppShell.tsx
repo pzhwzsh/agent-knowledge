@@ -15,6 +15,7 @@ const navItems = [
 
 const adminNavItems = [
   { href: "/admin/feedback", label: "反馈处理" },
+  { href: "/admin/audit", label: "审计日志" },
 ];
 
 export function AppShell({ children, user, onSignOut }: { children: ReactNode; user: User | null; onSignOut: () => void }) {

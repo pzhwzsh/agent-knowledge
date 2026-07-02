@@ -1,6 +1,6 @@
-﻿from fastapi import APIRouter
+from fastapi import APIRouter
 
-from app.api.routes import auth, discovery, documents, feedback, ingestions, preferences, push, recommendations, search, tasks
+from app.api.routes import audit, auth, discovery, documents, feedback, ingestions, preferences, push, recommendations, search, tasks
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -12,5 +12,6 @@ api_router.include_router(recommendations.router, prefix="/recommendations", tag
 api_router.include_router(discovery.router, prefix="/discovery", tags=["discovery"])
 api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
+api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
 
 api_router.include_router(push.router, prefix="/push", tags=["push"])

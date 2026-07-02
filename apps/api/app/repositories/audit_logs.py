@@ -40,3 +40,22 @@ class AuditLogRepository:
             .offset(offset)
         )
         return list(self.db.scalars(statement))
+
+    def list_all(
+        self,
+        *,
+        user_id: UUID | None = None,
+        action: str | None = None,
+        resource_type: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[AuditLog]:
+        statement = select(AuditLog)
+        if user_id is not None:
+            statement = statement.where(AuditLog.user_id == user_id)
+        if action is not None:
+            statement = statement.where(AuditLog.action == action)
+        if resource_type is not None:
+            statement = statement.where(AuditLog.resource_type == resource_type)
+        statement = statement.order_by(AuditLog.created_at.desc()).limit(limit).offset(offset)
+        return list(self.db.scalars(statement))

@@ -1,4 +1,4 @@
-﻿export type User = {
+export type User = {
   id: string;
   email: string;
   display_name: string | null;
@@ -94,6 +94,17 @@ export type UserFeedback = {
   severity: "low" | "medium" | "high" | "critical";
   message: string;
   status: string;
+  metadata_json: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AuditLog = {
+  id: string;
+  user_id: string;
+  action: string;
+  resource_type: string | null;
+  resource_id: string | null;
   metadata_json: Record<string, unknown>;
   created_at: string;
   updated_at: string;

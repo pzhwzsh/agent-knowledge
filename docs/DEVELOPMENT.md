@@ -41,7 +41,7 @@
 - Rerank。
 - 多模型路由。
 - 文档导出。
-- 完整管理后台仍未完成；当前只有反馈处理后台第一版。
+- 完整管理后台仍未完成；当前只有反馈处理后台和审计日志查询第一版。
 - token 成本统计。
 - 前端更细的交互状态、更多业务细节页面和生产级体验打磨。
 
@@ -456,7 +456,18 @@
 - 前端新增 `/admin/feedback` 反馈处理后台，只有 `is_admin` 用户侧边栏显示入口。
 - 已补充管理员可查看/更新、普通用户 403 和审计日志写入测试。
 
-仍需继续：完整管理员后台、反馈负责人/优先级/处理备注、由反馈生成维修任务、审计日志查询 UI/API。
+仍需继续：完整管理员后台、反馈负责人/优先级/处理备注、由反馈生成维修任务、审计导出和风险告警。
+
+### 第二十七阶段：审计日志查询第一批
+
+本阶段已完成：
+
+- 新增管理员接口 `GET /api/audit/logs`，支持按 user_id、action 和 resource_type 筛选审计日志。
+- 查询审计日志本身也会写入 `audit_log_list` 审计记录。
+- 前端新增 `/admin/audit` 审计日志页面，只有 `is_admin` 用户侧边栏显示入口。
+- 已补充管理员查询、筛选和普通用户 403 测试。
+
+仍需继续：审计日志导出、按风险级别筛选、敏感操作告警、审计日志保留周期和更完整管理员后台。
 
 ## 未完成内容
 
@@ -470,7 +481,7 @@
 - 真实 GitHub API 集成。
 - 视频/PDF 完整解析。
 - 高级推荐算法。
-- 完整管理后台仍未完成；当前只有反馈处理后台第一版。
+- 完整管理后台仍未完成；当前只有反馈处理后台和审计日志查询第一版。
 - 数据导出。
 - token 成本统计。
 - 更细的 pgvector 参数调优、召回评估和重排策略。
@@ -488,9 +499,9 @@
 - recommendations。
 - discovery。
 - tasks。
-- feedback 和管理员反馈处理。
+- feedback、管理员反馈处理和审计日志查询。
 
-最近通过结果：本轮 `python -m pytest app/tests/test_feedback.py` 为 5 passed；历史后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
+最近通过结果：本轮 `python -m pytest app/tests/test_feedback.py` 为 5 passed，`python -m pytest app/tests/test_audit.py` 为 3 passed；历史后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 外部分析核对与修补计划
 
@@ -502,7 +513,7 @@
 
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
-- 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台第一版已完成；仍缺完整管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
+- 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；仍缺完整管理员后台、token 黑名单或服务端会话撤销、审计导出/告警和更细权限分级。
 - 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations；仍缺其余页面迁移、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。

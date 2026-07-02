@@ -31,3 +31,20 @@ class AuditService:
         self.db.commit()
         self.db.refresh(log)
         return log
+
+    def list_all(
+        self,
+        *,
+        user_id: UUID | None = None,
+        action: str | None = None,
+        resource_type: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[AuditLog]:
+        return self.logs.list_all(
+            user_id=user_id,
+            action=action,
+            resource_type=resource_type,
+            limit=limit,
+            offset=offset,
+        )
