@@ -1,9 +1,12 @@
+from datetime import UTC, datetime
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import create_access_token, decode_token_payload, hash_password, verify_password
 from app.models.user import User
 from app.repositories.preferences import PreferenceRepository
+from app.repositories.tokens import RevokedTokenRepository
 from app.repositories.users import UserRepository
 
 
@@ -12,6 +15,7 @@ class AuthService:
         self.db = db
         self.users = UserRepository(db)
         self.preferences = PreferenceRepository(db)
+        self.revoked_tokens = RevokedTokenRepository(db)
 
     def register(self, *, email: str, password: str, display_name: str | None) -> User:
         if self.users.get_by_email(email) is not None:
@@ -33,3 +37,20 @@ class AuthService:
         if not user.is_active:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
         return create_access_token(str(user.id))
+
+    def logout(self, *, token: str, user: User) -> None:
+        payload = decode_token_payload(token)
+        if payload is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        jti = payload.get("jti")
+        expires_at = payload.get("exp")
+        if not isinstance(jti, str):
+            return
+        if self.revoked_tokens.exists(jti):
+            return
+        if isinstance(expires_at, (int, float)):
+            expires_at_dt = datetime.fromtimestamp(expires_at, UTC)
+        else:
+            expires_at_dt = datetime.now(UTC)
+        self.revoked_tokens.create(user_id=user.id, jti=jti, expires_at=expires_at_dt)
+        self.db.commit()

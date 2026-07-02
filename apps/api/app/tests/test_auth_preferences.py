@@ -72,3 +72,16 @@ def test_private_preferences_require_authentication(client: TestClient) -> None:
     response = client.get("/api/preferences")
 
     assert response.status_code == 401
+
+
+def test_logout_revokes_current_token(client: TestClient) -> None:
+    register(client, "logout@example.com")
+    token = login(client, "logout@example.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    logout_response = client.post("/api/auth/logout", headers=headers)
+    me_response = client.get("/api/auth/me", headers=headers)
+
+    assert logout_response.status_code == 200, logout_response.text
+    assert logout_response.json() == {"success": True}
+    assert me_response.status_code == 401

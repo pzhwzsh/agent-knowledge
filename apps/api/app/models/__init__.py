@@ -5,6 +5,7 @@ from app.models.job import AgentRun, IngestionJob
 from app.models.logs import AuditLog, PushLog
 from app.models.preference import UserPreference
 from app.models.recommendation import Recommendation
+from app.models.token import RevokedToken
 from app.models.user import User
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "IngestionJob",
     "PushLog",
     "Recommendation",
+    "RevokedToken",
     "Source",
     "User",
     "UserFeedback",

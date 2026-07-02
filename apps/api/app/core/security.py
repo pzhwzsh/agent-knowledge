@@ -1,5 +1,6 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -21,15 +22,21 @@ def verify_password(plain_password: str, password_hash: str) -> bool:
 def create_access_token(subject: str, expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
     expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=settings.jwt_expire_minutes))
-    payload: dict[str, Any] = {"sub": subject, "exp": expire}
+    payload: dict[str, Any] = {"sub": subject, "exp": expire, "jti": uuid4().hex}
     return jwt.encode(payload, settings.app_secret_key, algorithm=ALGORITHM)
 
 
-def decode_access_token(token: str) -> str | None:
+def decode_token_payload(token: str) -> dict[str, Any] | None:
     settings = get_settings()
     try:
-        payload = jwt.decode(token, settings.app_secret_key, algorithms=[ALGORITHM])
+        return jwt.decode(token, settings.app_secret_key, algorithms=[ALGORITHM])
     except JWTError:
+        return None
+
+
+def decode_access_token(token: str) -> str | None:
+    payload = decode_token_payload(token)
+    if payload is None:
         return None
     subject = payload.get("sub")
     return subject if isinstance(subject, str) else None

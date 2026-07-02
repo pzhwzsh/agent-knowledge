@@ -469,6 +469,21 @@
 
 仍需继续：审计日志导出、按风险级别筛选、敏感操作告警、审计日志保留周期和更完整管理员后台。
 
+### 第二十八阶段：服务端登出撤销第一批
+
+本阶段已完成：
+
+- 新生成的 JWT 增加 `jti` 标识。
+- 新增 `revoked_tokens` 表和 Alembic migration，用于记录已登出的 token。
+- `POST /api/auth/logout` 不再只是空响应，会把当前 token 的 `jti` 写入撤销表。
+- `get_current_user` 会拒绝已撤销 token。
+- 前端 `signOut()` 会先调用后端登出接口，再清除本地 token；接口失败也会清本地状态。
+- 已补充登出后旧 token 访问 `/api/auth/me` 返回 401 的测试。
+
+兼容说明：升级前已经签发、没有 `jti` 的旧 token 仍按旧逻辑校验，避免部署后把所有已登录用户立即踢下线；它们自然过期后，新 token 都会进入可撤销机制。
+
+仍需继续：刷新 token、全设备登出、撤销记录清理任务、会话列表 UI 和更细权限分级。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -513,7 +528,7 @@
 
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
-- 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；仍缺完整管理员后台、token 黑名单或服务端会话撤销、审计导出/告警和更细权限分级。
+- 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；服务端登出撤销第一版已完成；仍缺完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
 - 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations；仍缺其余页面迁移、全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。

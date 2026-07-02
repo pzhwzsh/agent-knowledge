@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { API_UNAUTHORIZED_EVENT, apiRequest, User } from "./api";
@@ -56,10 +56,15 @@ export function useAuth() {
     setTokenState(nextToken);
   }
 
-  function signOut() {
-    clearToken();
-    setTokenState(null);
-    setUser(null);
+  async function signOut() {
+    const currentToken = token;
+    try {
+      if (currentToken) await apiRequest("/api/auth/logout", { method: "POST" }, currentToken);
+    } finally {
+      clearToken();
+      setTokenState(null);
+      setUser(null);
+    }
   }
 
   async function refreshUser(authToken = token) {

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
@@ -8,6 +9,7 @@ from app.schemas.auth import LoginRequest, LogoutResponse, RegisterRequest, Toke
 from app.services.auth import AuthService
 
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -26,7 +28,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout() -> LogoutResponse:
+def logout(token: str = Depends(oauth2_scheme), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> LogoutResponse:
+    AuthService(db).logout(token=token, user=current_user)
     return LogoutResponse()
 
 

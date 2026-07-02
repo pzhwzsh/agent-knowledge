@@ -325,7 +325,7 @@ ruff check app
 - Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；反馈处理后台和审计日志查询第一版已完成；后续还需完整管理员后台、审计导出和告警。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
-- 前端 token 存 localStorage，logout 只是本地清除 token；后续需要 token 黑名单或服务端会话撤销策略。
+- 前端 token 仍存 localStorage；服务端登出撤销第一版已完成，新 token 带 `jti` 且 logout 会写入撤销表。后续仍需要刷新 token、全设备登出和会话列表。
 - 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations；仍缺其余页面迁移、toast/loading/error boundary 和页面级 skeleton。
 - 前端依赖已锁定，已新增生产 compose override；仍需治理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
@@ -352,6 +352,7 @@ ruff check app
 - 已完成使用反馈闭环第一批：`/api/feedback`、`user_feedback` 表和前端 `/feedback` 反馈维修台。
 - 已完成反馈处理后台第一批：管理员可查看全部反馈、更新状态，并写入审计日志；前端新增 `/admin/feedback`。
 - 已完成审计日志查询第一批：管理员可通过 `GET /api/audit/logs` 和 `/admin/audit` 查询审计日志。
+- 已完成服务端登出撤销第一批：新 JWT 带 `jti`，`POST /api/auth/logout` 会撤销当前 token，已撤销 token 再访问接口返回 401。
 
 ### 已修补或部分过期
 
@@ -366,7 +367,7 @@ ruff check app
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性评估、召回评估、rerank 和人工反馈调优。
 3. 推荐质量增强：真实 provider 评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 增强 Docker Compose 集成验证：接入 CI、真实 provider 可选验证、完整清理策略和失败产物归档。
-5. 安全加固增强：完整管理员后台、token 黑名单或服务端会话撤销、审计导出/告警和更细权限分级。
+5. 安全加固增强：完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
 6. 前端工程化增强：剩余页面 React Query 迁移、全局 toast/loading/error boundary、页面级 skeleton、自动化测试和依赖版本锁定。
 
 ## 建议下一步
