@@ -351,7 +351,7 @@
 - `useAuth()` 监听登录过期事件并清理本地 token 和 user 状态。
 - 前端 `npm run build` 已通过。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第十八阶段：生产 Web 启动和依赖锁定
 
@@ -431,7 +431,7 @@
 - `/recommendations` 使用 `useQuery` 加载推荐，用 mutation 处理 save/ignore/dislike 后 invalidate。
 - 前端 `npm run build` 已通过。
 
-仍需继续：documents/search/preferences 页面迁移、全局 toast、error boundary、页面 skeleton 和前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第二十五阶段：使用反馈闭环第一批
 
@@ -506,7 +506,7 @@
 - `/recommendations` 保存/忽略/不感兴趣操作结果改用全局 toast。
 - `/feedback` 反馈提交成功/失败改用全局 toast。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第三十一阶段：全局错误页第一批
 
@@ -517,7 +517,7 @@
 - 错误页提供“重试页面”和“回到仪表盘”入口。
 - 修复根 layout metadata 中文显示异常。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第三十二阶段：页面级 Skeleton 第一批
 
@@ -528,7 +528,7 @@
 - `/recommendations` 初次加载推荐列表时显示骨架屏。
 - `/feedback` 初次加载反馈列表时显示骨架屏。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第三十三阶段：全局 Toast 提示第二批
 
@@ -539,7 +539,7 @@
 - `/admin/feedback` 管理员更新反馈状态成功/失败提示改用全局 toast。
 - `/admin/audit` 审计日志加载失败会触发全局错误 toast。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第三十四阶段：Documents 页面体验收口第一批
 
@@ -549,7 +549,7 @@
 - `/documents` 删除成功改用全局 toast。
 - `/documents` 初次加载文档列表时显示骨架屏。
 
-仍需继续：详情区域更细 skeleton、删除确认弹窗和前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第三十五阶段：Documents React Query 迁移第一批
 
@@ -560,7 +560,7 @@
 - `/documents` 删除文档改为 `useMutation`，成功后 invalidate documents 和 dashboard query。
 - 保留全局 toast、列表 skeleton 和选中文档高亮。
 
-仍需继续：search 页面 React Query 化、删除确认弹窗、详情区域更细 skeleton 和前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ### 第三十六阶段：Preferences React Query 迁移第一批
 
@@ -572,7 +572,7 @@
 - 偏好页初次加载显示 skeleton。
 - 推送渠道选择补充 `disabled` 选项，和后端禁用推送通道能力保持一致。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 
 ### 第三十七阶段：Search React Query 迁移第一批
@@ -587,7 +587,7 @@
 
 验证结果：前端 `npm run build` passed；`apps/web/app/search/page.tsx` IDE 诊断无错误。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 
 
@@ -602,7 +602,7 @@
 
 验证结果：前端 `npm run build` passed；相关前端文件 IDE 诊断无错误。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 
 
@@ -616,7 +616,7 @@
 
 验证结果：前端 `npm run build` passed；admin 页面 IDE 诊断无错误。
 
-仍需继续：统一 loading 细节、前端自动化测试。
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ## 未完成内容
 
@@ -634,6 +634,20 @@
 - 数据导出。
 - token 成本统计。
 - 更细的 pgvector 参数调优、召回评估和重排策略。
+
+
+### 第四十阶段：前端测试基础第一批
+
+本阶段已完成：
+
+- 新增 Vitest、Testing Library、jest-dom 和 jsdom 测试依赖。
+- 新增 `vitest.config.ts` 和 `vitest.setup.ts`。
+- `package.json` 新增 `npm run test` 和 `npm run test:watch`。
+- 新增 `components/__tests__/QueryState.test.tsx`，覆盖 `SkeletonList` 和 `useQueryErrorToast` 的基础行为。
+
+验证结果：前端 `npm run test` 2 passed；`npm run build` passed；相关文件 IDE 诊断无错误。
+
+仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
 ## 测试现状
 
@@ -663,7 +677,7 @@
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；服务端登出撤销第一版已完成；仍缺完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
-- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，统一 query error toast 第一批、Admin Query UX 收口第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批和 documents 页面体验收口已完成；仍缺 loading 细节统一和前端自动化测试。
+- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，统一 query error toast 第一批、Admin Query UX 收口第一批、前端测试基础第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批和 documents 页面体验收口已完成；仍需扩展前端测试覆盖和统一 loading 细节。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
 - AuditLog 仍是模型占位，尚未形成完整审计写入链路。

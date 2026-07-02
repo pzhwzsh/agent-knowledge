@@ -182,10 +182,10 @@ PowerShell 激活虚拟环境：
 
 1. 用户调用 `POST /api/ingestions` 提交 URL 或文本。
 2. 系统创建 pending ingestion job，并投递 Celery `process_ingestion_job`。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. worker 将 job 标记 running。
 5. 文本直接使用；URL 先校验安全性再抓取。
-6. 前端工程化增强：统一 loading 细节、页面级 skeleton、自动化测试和依赖版本锁定。
+6. 前端工程化增强：扩展前端测试覆盖、统一 loading 细节、页面级 skeleton 和依赖版本锁定。
 7. RouterAgent 选择路由和分类。
 8. summary Agent 调用 `ChatModel` 生成结构化摘要；模型输出异常时降级为基础摘要。
 9. 记录 agent run。
@@ -195,17 +195,17 @@ PowerShell 激活虚拟环境：
 
 1. 用户调用 `POST /api/documents/from-content`。
 2. 从全局 `contents` 加载内容。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. 同一用户重复保存同一 content 时复用已有 document。
 5. 文本切片。
-6. 前端工程化增强：统一 loading 细节、页面级 skeleton、自动化测试和依赖版本锁定。
+6. 前端工程化增强：扩展前端测试覆盖、统一 loading 细节、页面级 skeleton 和依赖版本锁定。
 7. 写入 `document_chunks`。
 
 ### 搜索和问答
 
 1. 用户发送搜索词或问题。
 2. 系统生成 query embedding。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. PostgreSQL 使用 pgvector 数据库侧 cosine distance 排序；SQLite 测试环境回退到 Python 侧余弦相似度排序。
 5. chat 把检索片段传给 `ChatModel` 生成答案，并返回 citations。
 
@@ -213,24 +213,24 @@ PowerShell 激活虚拟环境：
 
 1. 内容可以通过手动生成或 discovery 生成推荐。
 2. 推荐初始状态为 `pending`。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. save 会创建当前用户私有 document。
 
 ### 外部发现
 
 1. GitHub Trending 或 RSS 被采集。
 2. 采集项写入或复用全局 content。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. 不会自动创建 document。
 
 ### 推送流程
 
 1. 系统读取用户偏好和 pending 推荐。
 2. 根据 `push_channel` 选择站内、邮件或钉钉。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. 邮件和钉钉需要 SMTP 或 webhook 配置，缺失时记录 skipped，不会误发。
 5. `push_channel=disabled` 会跳过推送并记录日志。
-6. 前端工程化增强：统一 loading 细节、页面级 skeleton、自动化测试和依赖版本锁定。
+6. 前端工程化增强：扩展前端测试覆盖、统一 loading 细节、页面级 skeleton 和依赖版本锁定。
 7. Celery Beat 会批量为活跃用户触发每日推荐推送。
 
 ## 安全规则
@@ -326,7 +326,8 @@ ruff check app
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；反馈处理后台和审计日志查询第一版已完成；后续还需完整管理员后台、审计导出和告警。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 仍存 localStorage；服务端登出撤销第一版已完成，新 token 带 `jti` 且 logout 会写入撤销表。后续仍需要刷新 token、全设备登出和会话列表；已过期撤销记录已有定时清理任务。
-- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、统一 query UX 第一批和 Admin Query UX 收口第一批已完成；仍缺 loading 细节统一和前端自动化测试。
+- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，前端测试基础第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、统一 query UX 第一批和 Admin Query UX 收口第一批已完成；仍需扩展前端测试覆盖和统一 loading 细节。
+- 已完成前端测试基础第一批：接入 Vitest/Testing Library，`QueryState.test.tsx` 覆盖 skeleton 和 query error toast 基础行为。
 - 已完成 search React Query 迁移第一批：语义搜索和知识库问答由 mutation 管理，按钮 pending 状态和 skeleton 已接入。
 - 已完成统一 query UX 第一批：新增 `QueryState.tsx`，dashboard/documents/recommendations/feedback/preferences 已复用 query 错误 toast 和 skeleton 列表。
 - 已完成 Admin Query UX 收口第一批：`/admin/feedback` 和 `/admin/audit` 已接入统一 query 错误 toast 和 skeleton 列表。
@@ -376,16 +377,16 @@ ruff check app
 
 1. 修正文档口径：明确标注 mock / 规则 / 占位 / 真实能力。
 2. 增强 RAG 和总结生产质量：真实 provider 验证、引用编号稳定性评估、召回评估、rerank 和人工反馈调优。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. 增强 Docker Compose 集成验证：接入 CI、真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全加固增强：完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
-6. 前端工程化增强：统一 loading 细节、页面级 skeleton、自动化测试和依赖版本锁定。
+6. 前端工程化增强：扩展前端测试覆盖、统一 loading 细节、页面级 skeleton 和依赖版本锁定。
 
 ## 建议下一步
 
 1. 完成更完整的任务监控告警、批量失败任务重放和生产运维面板。
 2. 增强推送模板、带签名退订链接、可配置频控、投递告警和操作链接。
-3. 前端工程化：统一 loading 细节、更多页面级 skeleton、自动化测试和依赖版本锁定。
+3. 前端工程化：扩展前端测试覆盖、统一 loading 细节、更多页面级 skeleton 和依赖版本锁定。
 4. 做 pgvector 召回评估、参数调优和 rerank。
 5. 增加 Docker Compose 端到端验证。
 
