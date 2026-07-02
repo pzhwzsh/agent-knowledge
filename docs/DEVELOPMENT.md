@@ -530,6 +530,17 @@
 
 仍需继续：documents/search/preferences/admin 页面 skeleton、统一 loading 策略和前端自动化测试。
 
+### 第三十三阶段：全局 Toast 提示第二批
+
+本阶段已完成：
+
+- `/search` 搜索、问答的进行中、成功和失败提示改用全局 toast。
+- `/preferences` 偏好保存成功/失败提示改用全局 toast。
+- `/admin/feedback` 管理员更新反馈状态成功/失败提示改用全局 toast。
+- `/admin/audit` 审计日志加载失败会触发全局错误 toast。
+
+仍需继续：documents 页面操作提示、query error toast 统一策略、toast 去重和前端自动化测试。
+
 ## 未完成内容
 
 以下内容不要描述为已可用能力：
@@ -575,7 +586,7 @@
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；服务端登出撤销第一版已完成；仍缺完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
-- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations，全局 toast、全局错误页和页面级 skeleton 第一批已完成；仍缺其余页面迁移、统一 loading 和前端自动化测试。
+- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations，全局 toast 第二批、全局错误页和页面级 skeleton 第一批已完成；仍缺 documents 页面提示迁移、统一 loading 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
 - AuditLog 仍是模型占位，尚未形成完整审计写入链路。

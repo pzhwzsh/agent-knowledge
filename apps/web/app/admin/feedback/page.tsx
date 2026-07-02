@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest, UserFeedback } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
 import { AppShell, EmptyState, PageCard } from "../../../components/AppShell";
+import { useToast } from "../../../components/ToastProvider";
 
 const statuses = ["open", "planned", "in_progress", "resolved", "wont_fix", "deleted"] as const;
 type FeedbackStatus = (typeof statuses)[number];
@@ -13,9 +14,9 @@ type FeedbackStatus = (typeof statuses)[number];
 export default function AdminFeedbackPage() {
   const router = useRouter();
   const auth = useAuth();
+  const { notify } = useToast();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     if (!auth.isLoading && !auth.token) router.push("/");
@@ -32,10 +33,10 @@ export default function AdminFeedbackPage() {
     mutationFn: ({ id, status }: { id: string; status: FeedbackStatus }) =>
       apiRequest<UserFeedback>(`/api/feedback/admin/${id}`, { method: "PATCH", body: JSON.stringify({ status }) }, auth.token),
     onSuccess: async () => {
-      setNotice("反馈状态已更新，并写入审计日志。");
+      notify("反馈状态已更新，并写入审计日志。", "success");
       await queryClient.invalidateQueries({ queryKey: ["admin-feedback", auth.token] });
     },
-    onError: (error) => setNotice(error instanceof Error ? error.message : "更新失败"),
+    onError: (error) => notify(error instanceof Error ? error.message : "更新失败", "error"),
   });
 
   const items = feedbackQuery.data ?? [];
@@ -56,7 +57,6 @@ export default function AdminFeedbackPage() {
             </select>
           </label>
         </div>
-        {notice ? <p className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm">{notice}</p> : null}
         <div className="mt-6 space-y-3">
           {feedbackQuery.isLoading ? <EmptyState text="正在加载用户反馈..." /> : null}
           {items.map((item) => (

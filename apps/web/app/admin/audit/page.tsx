@@ -6,10 +6,12 @@ import { useRouter } from "next/navigation";
 import { apiRequest, AuditLog } from "../../../lib/api";
 import { useAuth } from "../../../lib/auth";
 import { AppShell, EmptyState, PageCard } from "../../../components/AppShell";
+import { useToast } from "../../../components/ToastProvider";
 
 export default function AdminAuditPage() {
   const router = useRouter();
   const auth = useAuth();
+  const { notify } = useToast();
   const [action, setAction] = useState("");
   const [resourceType, setResourceType] = useState("");
 
@@ -29,6 +31,10 @@ export default function AdminAuditPage() {
       return apiRequest<AuditLog[]>(`/api/audit/logs${queryString ? `?${queryString}` : ""}`, {}, auth.token);
     },
   });
+
+  useEffect(() => {
+    if (query.isError) notify("审计日志加载失败，请确认当前账号有管理员权限。", "error");
+  }, [notify, query.isError]);
 
   const logs = query.data ?? [];
   return (
