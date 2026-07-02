@@ -67,3 +67,11 @@ export function PageCard({ children, className = "" }: { children: ReactNode; cl
 export function EmptyState({ text }: { text: string }) {
   return <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/35 p-5 text-sm text-slate-400">{text}</div>;
 }
+
+export function SkeletonBlock({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-2xl bg-white/10 ${className}`} />;
+}
+
+export function SkeletonCard() {
+  return <div className="rounded-3xl border border-white/10 bg-slate-950/35 p-5"><SkeletonBlock className="h-4 w-24" /><SkeletonBlock className="mt-5 h-8 w-32" /><SkeletonBlock className="mt-4 h-3 w-full" /><SkeletonBlock className="mt-2 h-3 w-2/3" /></div>;
+}
