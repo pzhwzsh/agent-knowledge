@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
+from app.db.init_db import create_preview_tables
+from app.db.session import engine
 
 configure_logging()
 logger = get_logger(__name__)
@@ -14,6 +16,9 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    if settings.local_preview_auto_create and str(settings.database_url).startswith("sqlite"):
+        create_preview_tables(engine)
+        logger.info("local_preview_database_ready")
     logger.info("api_startup")
     yield
 

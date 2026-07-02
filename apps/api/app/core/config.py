@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     celery_daily_sources_minute: int = 30
     celery_default_retry_delay_seconds: int = 60
     celery_max_retries: int = 3
+    local_preview_auto_create: bool = False
 
     llm_provider: str = "openai_compatible"
     llm_base_url: str | None = None

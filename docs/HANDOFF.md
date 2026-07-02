@@ -326,13 +326,19 @@ ruff check app
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；反馈处理后台和审计日志查询第一版已完成；后续还需完整管理员后台、审计导出和告警。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 仍存 localStorage；服务端登出撤销第一版已完成，新 token 带 `jti` 且 logout 会写入撤销表。后续仍需要刷新 token、全设备登出和会话列表；已过期撤销记录已有定时清理任务。
-- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，前端测试基础第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、统一 query UX 第一批和 Admin Query UX 收口第一批已完成；仍需扩展前端测试覆盖和统一 loading 细节。
+- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、统一 query UX 第一批和 Admin Query UX 收口第一批已完成；仍需扩展前端测试覆盖和统一 loading 细节。
+- 已完成 ToastProvider 测试覆盖第一批：`ToastProvider.test.tsx` 覆盖三种 toast 类型、手动关闭和自动消失。
+- 已完成登录页交互测试第一批：`page.test.tsx` 覆盖登录成功、注册后自动登录和认证失败 toast。
+- 已完成 Tailwind v4 样式入口修复：`globals.css` 改用 `@import "tailwindcss"` 和 `@source`，登录/注册页不再以裸 HTML 形态显示。
+- 已完成无 Docker 本地预览模式：新增 SQLite 自动建表开关和 `.env.local-preview.example`，便于本机预览注册/登录；该模式不替代 PostgreSQL/pgvector 生产验证。
+- 登录页已按用户反馈调整为单栏居中视觉：保留雷达和登录/注册表单，去掉右侧工作台展示区和 `API 已接入` 徽标。
 - 已完成前端测试基础第一批：接入 Vitest/Testing Library，`QueryState.test.tsx` 覆盖 skeleton 和 query error toast 基础行为。
+- 已完成 API client 测试覆盖第一批：`api.test.ts` 覆盖成功请求、后端错误消息、401 登录过期事件和请求超时转换。
 - 已完成 search React Query 迁移第一批：语义搜索和知识库问答由 mutation 管理，按钮 pending 状态和 skeleton 已接入。
 - 已完成统一 query UX 第一批：新增 `QueryState.tsx`，dashboard/documents/recommendations/feedback/preferences 已复用 query 错误 toast 和 skeleton 列表。
 - 已完成 Admin Query UX 收口第一批：`/admin/feedback` 和 `/admin/audit` 已接入统一 query 错误 toast 和 skeleton 列表。
 - 前端依赖已锁定，已新增生产 compose override；仍需治理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
-- ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
+- ORM 与 migration 类型口径需在真实 PostgreSQL 上复查；SQLite 本地预览只用于无 Docker 机器的界面和基础认证体验。
 
 ### 本轮已推进
 

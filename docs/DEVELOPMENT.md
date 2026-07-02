@@ -649,6 +649,78 @@
 
 仍需继续：扩展前端测试覆盖、统一 loading 细节。
 
+
+### 第四十一阶段：Tailwind v4 样式入口修复
+
+本阶段已完成：
+
+- 修复 `apps/web/app/globals.css` 中 Tailwind v4 入口写法：从 `@tailwind base/components/utilities` 改为 `@import "tailwindcss"`。
+- 新增 `@source` 扫描 `app` 和 `components` 下的 TS/TSX 文件，确保工具类生成。
+- 修复登录/注册页样式未生效导致的裸 HTML 和布局压扁问题。
+
+验证结果：前端 `npm run build` passed；`apps/web/app/globals.css` IDE 诊断无错误。
+
+仍需继续：用户实机预览登录/注册页，继续根据视觉反馈打磨。
+
+
+### 第四十二阶段：无 Docker 本地预览模式
+
+本阶段已完成：
+
+- 新增 `LOCAL_PREVIEW_AUTO_CREATE` 配置，默认关闭。
+- 新增 `apps/api/app/db/init_db.py`，在显式开启且 `DATABASE_URL` 为 SQLite 时启动自动建表。
+- `app.db.session` 对 SQLite 增加 `check_same_thread=False`，适配本地 FastAPI 预览。
+- 新增 `apps/api/.env.local-preview.example`，用于没有 Docker 的电脑预览注册、登录和基础页面。
+- 登录页同步完成视觉收口：深蓝灰/青绿配色、去掉右侧展示区和 `API 已接入` 徽标。
+
+验证结果：后端 `python -m pytest` 73 passed；前端 `npm run build` passed；相关文件 IDE 诊断无错误。
+
+仍需继续：真实 PostgreSQL/pgvector 路径仍需 Docker 或本机 PostgreSQL 验证；SQLite 预览模式只用于本机体验，不作为生产能力口径。
+
+
+### 第四十三阶段：API client 测试覆盖第一批
+
+本阶段已完成：
+
+- 新增 `apps/web/lib/__tests__/api.test.ts`。
+- 覆盖 `apiRequest` 成功请求的 JSON header、Bearer token 和 JSON 返回。
+- 覆盖后端 `detail` 错误消息解析和 `ApiError` 字段。
+- 覆盖 401 响应触发统一登录过期事件。
+- 覆盖请求超时被转换为 `ApiError`。
+
+验证结果：前端 `npm run test` 2 files / 6 tests passed；前端 `npm run build` passed；相关文件 IDE 诊断无错误。
+
+仍需继续：扩展页面级交互测试，尤其是登录页、ToastProvider、React Query 页面状态和表单错误提示。
+
+
+
+### 第四十四阶段：登录页交互测试第一批
+
+本阶段已完成：
+
+- 新增 `apps/web/app/__tests__/page.test.tsx`。
+- 覆盖登录成功后的 token 保存、成功 toast 和跳转 `/dashboard`。
+- 覆盖注册模式下先注册、再自动登录、再进入工作台。
+- 覆盖认证失败时显示错误 toast，且不会保存 token 或跳转。
+
+验证结果：前端 `npm run test` 3 files / 9 tests passed；前端 `npm run build` passed；相关文件 IDE 诊断无错误。
+
+仍需继续：扩展 ToastProvider、React Query 页面状态和更多表单边界测试。
+
+
+### 第四十五阶段：ToastProvider 测试覆盖第一批
+
+本阶段已完成：
+
+- 新增 `apps/web/components/__tests__/ToastProvider.test.tsx`。
+- 覆盖 success/error/info toast 渲染和视觉类名。
+- 覆盖点击 toast 手动关闭。
+- 覆盖 4.5 秒后自动消失。
+
+验证结果：前端 `npm run test` 4 files / 12 tests passed；前端 `npm run build` passed；相关文件 IDE 诊断无错误。
+
+仍需继续：扩展 React Query 页面状态和更多表单边界测试。
+
 ## 测试现状
 
 当前后端测试覆盖：
@@ -664,7 +736,7 @@
 - tasks。
 - feedback、管理员反馈处理和审计日志查询。
 
-最近通过结果：本轮 `python -m pytest app/tests/test_tasks.py` 为 10 passed；本轮 `python -m pytest app/tests/test_feedback.py` 为 5 passed，`python -m pytest app/tests/test_audit.py` 为 3 passed；历史后端全量 `pytest` 为 59 passed；`ruff check app` passed；前端 `npm run build` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
+最近通过结果：本轮后端 `python -m pytest` 为 73 passed；本轮前端 `npm run test` 为 4 files / 12 tests passed；本轮前端 `npm run build` passed；`ruff check app` passed；`npm install --package-lock-only` completed，但 npm audit 仍有 2 个 moderate 漏洞需后续治理。
 
 ## 外部分析核对与修补计划
 
@@ -677,7 +749,7 @@
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；服务端登出撤销第一版已完成；仍缺完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
-- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，统一 query error toast 第一批、Admin Query UX 收口第一批、前端测试基础第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批和 documents 页面体验收口已完成；仍需扩展前端测试覆盖和统一 loading 细节。
+- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations/documents/preferences/search/admin，统一 query error toast 第一批、Admin Query UX 收口第一批、前端测试基础第一批、API client 测试覆盖第一批、登录页交互测试第一批、ToastProvider 测试覆盖第一批、全局 toast 第二批、全局错误页、页面级 skeleton 第一批和 documents 页面体验收口已完成；仍需扩展前端测试覆盖和统一 loading 细节。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
 - AuditLog 仍是模型占位，尚未形成完整审计写入链路。
@@ -700,7 +772,7 @@
 3. 推荐质量增强：补真实 provider 推荐评估、时间衰减、去重排序、权重配置和更完整学习型推荐。
 4. 集成验证增强：将 Docker smoke test 接入 CI，补真实 provider 可选验证、完整清理策略和失败产物归档。
 5. 安全收口增强：增加管理员后台、token 黑名单或服务端会话撤销、审计日志查询 UI/API 和更细权限分级。
-6. 前端工程化增强：迁移剩余页面到 React Query，补全局 toast/loading/error boundary、页面级 skeleton 和前端自动化测试。
+6. 前端工程化增强：扩展页面级交互测试、统一 loading 细节、补更多页面级 skeleton 和前端自动化测试。
 7. 生产可复现增强：处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 
 ## 开发规则
