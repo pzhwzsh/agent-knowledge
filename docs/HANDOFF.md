@@ -326,7 +326,7 @@ ruff check app
 - `/api/tasks/health` 和 `/api/tasks/schedule` 已升级为管理员访问，并记录审计日志；反馈处理后台和审计日志查询第一版已完成；后续还需完整管理员后台、审计导出和告警。
 - URL 抓取已对重定向后的最终 URL 再次做 SSRF 校验。
 - 前端 token 仍存 localStorage；服务端登出撤销第一版已完成，新 token 带 `jti` 且 logout 会写入撤销表。后续仍需要刷新 token、全设备登出和会话列表；已过期撤销记录已有定时清理任务。
-- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations，全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口和 documents React Query 迁移第一批已完成；仍缺统一 loading。
+- 前端 API client 已补 timeout、AbortController 和统一 401；React Query 已接入并迁移 dashboard/recommendations，全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、documents React Query 和 preferences React Query 迁移第一批已完成；仍缺统一 loading。
 - 前端依赖已锁定，已新增生产 compose override；仍需治理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 与 migration 类型口径需在真实 PostgreSQL 上复查。
 
@@ -360,6 +360,7 @@ ruff check app
 - 已完成页面级 skeleton 第一批：dashboard、recommendations 和 feedback 初次加载显示骨架屏。
 - 已完成 documents 页面体验收口第一批：列表加载 skeleton，加载/删除提示接入全局 toast。
 - 已完成 documents React Query 迁移第一批：文档列表、详情和删除操作由 query/mutation 管理。
+- 已完成 preferences React Query 迁移第一批：偏好加载/保存由 query/mutation 管理，保存后刷新推荐和仪表盘缓存。
 
 ### 已修补或部分过期
 

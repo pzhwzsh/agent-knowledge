@@ -560,7 +560,19 @@
 - `/documents` 删除文档改为 `useMutation`，成功后 invalidate documents 和 dashboard query。
 - 保留全局 toast、列表 skeleton 和选中文档高亮。
 
-仍需继续：preferences/search 页面 React Query 化、删除确认弹窗、详情区域更细 skeleton 和前端自动化测试。
+仍需继续：search 页面 React Query 化、删除确认弹窗、详情区域更细 skeleton 和前端自动化测试。
+
+### 第三十六阶段：Preferences React Query 迁移第一批
+
+本阶段已完成：
+
+- `/preferences` 偏好加载改为 `useQuery`。
+- `/preferences` 保存偏好改为 `useMutation`。
+- 保存成功后更新 preferences query cache，并 invalidate recommendations/dashboard。
+- 偏好页初次加载显示 skeleton。
+- 推送渠道选择补充 `disabled` 选项，和后端禁用推送通道能力保持一致。
+
+仍需继续：search 页面 React Query 化、统一 query error toast、前端自动化测试。
 
 ## 未完成内容
 
@@ -607,7 +619,7 @@
 - 推荐质量仍需收口：`RecommenderAgent` 已接入模型辅助决策并保留规则 fallback，且已增加用户反馈加权第一版；仍缺真实 provider 评估、时间衰减、去重排序和更完整学习型推荐。
 - 集成验证仍需增强：Docker Compose smoke 脚本已补 task 认证、pgvector extension 断言和失败日志收集；仍缺 CI 接入、真实 provider 可选验证和完整清理策略。
 - 安全收口还需继续：task health/schedule 已升级为管理员访问并写入审计日志，URL 重定向后 SSRF 已复查并加测试，反馈处理后台和审计日志查询第一版已完成；服务端登出撤销第一版已完成；仍缺完整管理员后台、刷新 token、全设备登出、审计导出/告警和更细权限分级。
-- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations，全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口和 documents React Query 迁移第一批已完成；仍缺统一 loading 和前端自动化测试。
+- 前端工程质量还需继续补强：API client 已补 timeout、AbortController 和统一 401，React Query 已接入并迁移 dashboard/recommendations，全局 toast 第二批、全局错误页、页面级 skeleton 第一批、documents 页面体验收口、documents React Query 和 preferences React Query 迁移第一批已完成；仍缺统一 loading 和前端自动化测试。
 - 生产可复现仍需继续：前端依赖已锁定，已新增生产 compose override；仍需处理 npm audit 漏洞、多阶段镜像、CI 构建和部署环境差异。
 - ORM 和 Alembic migration 类型口径需要复查：部分 list 字段 ORM 用 JSONB/JSON 兼容类型，历史迁移里使用 ARRAY(String)，需要在真实 PostgreSQL 上验证并统一。
 - AuditLog 仍是模型占位，尚未形成完整审计写入链路。
